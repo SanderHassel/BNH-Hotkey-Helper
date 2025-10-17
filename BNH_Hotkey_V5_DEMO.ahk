@@ -3,9 +3,9 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.2 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-16
+; Sist oppdatert: 2025-10-17
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
@@ -15,7 +15,7 @@ global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
 ; --- AUTO-UPDATE KONFIGURASJON ---
 global UPDATE_URL := "https://raw.githubusercontent.com/SanderHassel/BNH-Hotkey-Helper/refs/heads/main/BNH_Hotkey_V5_DEMO.ahk"
-global UPDATE_INTERVAL := 60000  ; 30 minutter i millisekunder (30 * 60 * 1000)
+global UPDATE_INTERVAL := 3600000  ; 60 minutter i millisekunder (60 * 60 * 1000)
 global LAST_UPDATE_FILE := A_ScriptDir "\last_update.txt"
 
 ; Start auto-update timer
@@ -46,7 +46,7 @@ global DEKK_PATHS := {
 }
 
 ; ============================================================================
-; AUTO-UPDATE SYSTEM - v6.0 (MED TRAYTIP-NOTIFIKASJONER)
+; AUTO-UPDATE SYSTEM - v5.3 (MED TRAYTIP-NOTIFIKASJONER)
 ; ============================================================================
 
 CheckForUpdates() {
@@ -1134,97 +1134,191 @@ GetFluidDatabase() {
 }
 
 ; ============================================================================
-; GUI - RABATT KALKULATOR
+; GUI - RABATT KALKULATOR v2.0 (MED LIVE-BEREGNING)
 ; ============================================================================
 
-ShowDiscountDialog(originalValue) {
+ShowDiscountDialog(originalValue := "") {
     try {
         rabattGui := Gui("+AlwaysOnTop", "BNH - Rabatt Kalkulator")
         rabattGui.BackColor := COLORS.BG_DARK
         rabattGui.MarginX := 20
         rabattGui.MarginY := 20
         
-        titleText := rabattGui.Add("Text", "w260 h30 Center c" COLORS.TEXT_WHITE, "Velg rabatt prosent")
-        titleText.SetFont("s12 Bold", "Segoe UI")
+        titleText := rabattGui.Add("Text", "w320 h35 Center c" COLORS.TEXT_WHITE " Section", "💰 Rabatt Kalkulator")
+        titleText.SetFont("s14 Bold", "Segoe UI")
         
-        inputLabel := rabattGui.Add("Text", "w260 h20 c" COLORS.TEXT_GRAY " y+10", "Rabatt (% eller tall som 10, 20, 25):")
-        inputLabel.SetFont("s9", "Segoe UI")
+        originalLabel := rabattGui.Add("Text", "w320 h20 c" COLORS.TEXT_GRAY " xs y+15", "Original pris:")
+        originalLabel.SetFont("s9", "Segoe UI")
         
-        rabattInput := rabattGui.Add("Edit", "w240 h30 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM " y+5", "20")
-        rabattInput.SetFont("s10", "Segoe UI")
-        WinSetStyle("-0x2000", rabattInput.Hwnd)
-        rabattUpDown := rabattGui.Add("UpDown", "Range1-99", 20)
+        ; VALIDER CLIPBOARD - KUN BRUK HVIS DET ER ETT RENT TALL
+        cleanValue := ""
+        if (originalValue != "") {
+            ; Trim whitespace først
+            testValue := Trim(originalValue)
+            
+            ; SJEKK 1: Må være relativt kort (maks 15 tegn for å være ett tall)
+            if (StrLen(testValue) > 15) {
+                cleanValue := ""  ; For langt, sannsynligvis tekst
+            }
+            ; SJEKK 2: Må matche mønster for ett enkelt tall
+            ; Tillatt: "1990", "1990.50", "1 990", "1.990,50", "1990,-"
+            else if RegExMatch(testValue, "^[\s\d\.,\-]+$") {
+                ; Fjern alle unntatt siffer
+                numericOnly := RegExReplace(testValue, "[^\d]", "")
+                
+                ; SJEKK 3: Må ha minst 1 siffer og ikke være for langt
+                if (numericOnly != "" && StrLen(numericOnly) <= 10 && IsNumber(numericOnly)) {
+                    finalValue := Integer(numericOnly)
+                    
+                    ; SJEKK 4: Må være positivt og fornuftig (1-10 000 000)
+                    if (finalValue > 0 && finalValue <= 10000000) {
+                        cleanValue := String(finalValue)
+                    }
+                }
+            }
+            ; Hvis ingen match, forblir cleanValue tom
+        }
         
-        buttonLabel := rabattGui.Add("Text", "w260 h20 c" COLORS.TEXT_GRAY " y+15", "Hurtigvalg:")
+        originalInput := rabattGui.Add("Edit", "w320 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM " xs y+5", cleanValue)
+        originalInput.SetFont("s11", "Segoe UI")
+        originalInput.OnEvent("Change", (*) => CalculateDiscount())
+        
+        rabattLabel := rabattGui.Add("Text", "w320 h20 c" COLORS.TEXT_GRAY " xs y+15", "Rabatt (%):")
+        rabattLabel.SetFont("s9", "Segoe UI")
+        
+        rabattInput := rabattGui.Add("Edit", "w300 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM " xs y+5", "20")
+        rabattInput.SetFont("s11", "Segoe UI")
+        rabattInput.OnEvent("Change", (*) => CalculateDiscount())
+        
+        rabattUpDown := rabattGui.Add("UpDown", "Range0-100", 20)
+        
+        buttonLabel := rabattGui.Add("Text", "w320 h20 c" COLORS.TEXT_GRAY " xs y+15", "Hurtigvalg:")
         buttonLabel.SetFont("s9", "Segoe UI")
         
-        btn10 := rabattGui.Add("Button", "w60 h30 y+5", "10%")
+        btn10 := rabattGui.Add("Button", "w73 h30 xs y+5", "10%")
         btn10.SetFont("s9", "Segoe UI")
         btn10.OnEvent("Click", (*) => SetRabatt(10))
         
-        btn15 := rabattGui.Add("Button", "w60 h30 x+5", "15%")
+        btn15 := rabattGui.Add("Button", "w73 h30 x+5", "15%")
         btn15.SetFont("s9", "Segoe UI")
         btn15.OnEvent("Click", (*) => SetRabatt(15))
         
-        btn20 := rabattGui.Add("Button", "w60 h30 x+5", "20%")
+        btn20 := rabattGui.Add("Button", "w73 h30 x+5", "20%")
         btn20.SetFont("s9", "Segoe UI")
         btn20.OnEvent("Click", (*) => SetRabatt(20))
         
-        btn25 := rabattGui.Add("Button", "w60 h30 x+5", "25%")
+        btn25 := rabattGui.Add("Button", "w73 h30 x+5", "25%")
         btn25.SetFont("s9", "Segoe UI")
         btn25.OnEvent("Click", (*) => SetRabatt(25))
         
-        sendBtn := CreateStyledButton(rabattGui, "x70 w160 h40 y+15", "Send", COLORS.BLUE, 11)
-        sendBtn.OnEvent("Click", (*) => ApplyDiscount())
+        resultBox := rabattGui.Add("Text", "w320 h80 Center c" COLORS.TEXT_WHITE " Background" COLORS.GREEN " xs y+20 Border", "")
+        resultBox.SetFont("s12 Bold", "Segoe UI")
         
-        cancelBtn := CreateStyledButton(rabattGui, "x70 w160 h30 y+5", "Avbryt", COLORS.RED, 9)
+        resultLabel := rabattGui.Add("Text", "xp+10 yp+10 w300 h20 Center c" COLORS.TEXT_WHITE " Background" COLORS.GREEN, "NY PRIS:")
+        resultLabel.SetFont("s9", "Segoe UI")
+        
+        resultValue := rabattGui.Add("Text", "xp yp+25 w300 h40 Center c" COLORS.TEXT_WHITE " Background" COLORS.GREEN, "0 kr")
+        resultValue.SetFont("s20 Bold", "Segoe UI")
+        
+        sendBtn := CreateStyledButton(rabattGui, "xs w155 h45 y+15", "📤 Send (Enter)", COLORS.BLUE, 11)
+        sendBtn.OnEvent("Click", (*) => SendDiscountedPrice())
+        
+        copyBtn := CreateStyledButton(rabattGui, "x+10 w155 h45 yp", "📋 Kopier", COLORS.ORANGE, 11)
+        copyBtn.OnEvent("Click", (*) => CopyDiscountedPrice())
+        
+        cancelBtn := CreateStyledButton(rabattGui, "xs w320 h35 y+10", "Lukk", COLORS.RED, 9)
         cancelBtn.OnEvent("Click", (*) => rabattGui.Destroy())
         
         rabattGui.OnEvent("Close", (*) => rabattGui.Destroy())
         rabattGui.OnEvent("Escape", (*) => rabattGui.Destroy())
-        rabattGui.Show("w300")
-        rabattInput.Focus()
+        rabattGui.Show("w360 h590")
+        originalInput.Focus()
         
         HotIfWinActive("ahk_id " rabattGui.Hwnd)
-        Hotkey("Enter", (*) => ApplyDiscount(), "On")
+        Hotkey("Enter", (*) => SendDiscountedPrice(), "On")
+        
+        CalculateDiscount()
         
         SetRabatt(value) {
             try {
                 rabattInput.Value := value
                 rabattUpDown.Value := value
+                CalculateDiscount()
             }
         }
         
-        ApplyDiscount() {
+        CalculateDiscount() {
             try {
-                rabattValue := Trim(StrReplace(rabattInput.Value, "%", ""))
-                if !IsNumber(rabattValue) {
-                    MsgBox("Vennligst skriv inn et gyldig tall!")
+                originalStr := Trim(originalInput.Text)
+                rabattStr := Trim(StrReplace(rabattInput.Text, "%", ""))
+                
+                if (originalStr = "" || !IsNumber(originalStr)) {
+                    resultValue.Text := "Skriv inn pris"
                     return
                 }
-                rabattPercent := Float(rabattValue)
-                if (rabattPercent <= 0 || rabattPercent >= 100) {
-                    MsgBox("Rabatt må være mellom 0 og 100%")
+                
+                if (rabattStr = "" || !IsNumber(rabattStr)) {
+                    resultValue.Text := "Ugyldig %"
                     return
                 }
-                cleanValue := RemoveSpaces(originalValue)
-                cleanValue := RegExReplace(cleanValue, "[,\.].*", "")
-                if IsNumber(cleanValue) {
-                    newValue := Integer(Ceil(cleanValue * (1 - rabattPercent / 100)))
-                    HotIfWinActive("ahk_id " rabattGui.Hwnd)
-                    Hotkey("Enter", "Off")
-                    HotIfWinActive()
-                    rabattGui.Destroy()
-                    Send(String(newValue))
-                } else {
-                    MsgBox("Verdien i utklippstavlen er ikke et gyldig tall: '" cleanValue "'")
-                }
-            } catch as e {
-                ShowError("Apply Discount", e)
+                
+                originalPrice := Float(originalStr)
+                rabattPercent := Float(rabattStr)
+                newPrice := Integer(Ceil(originalPrice * (1 - rabattPercent / 100)))
+                resultValue.Text := newPrice " kr"
+                
+                if (rabattPercent >= 25)
+                    resultBox.Opt("Background" COLORS.DARK_RED)
+                else if (rabattPercent >= 15)
+                    resultBox.Opt("Background" COLORS.ORANGE)
+                else
+                    resultBox.Opt("Background" COLORS.GREEN)
+                
+            } catch {
+                resultValue.Text := "Feil"
             }
         }
+        
+        SendDiscountedPrice() {
+            try {
+                resultText := Trim(StrReplace(resultValue.Text, " kr", ""))
+                
+                if (resultText = "" || resultText = "Skriv inn pris" || resultText = "Ugyldig %" || resultText = "Feil") {
+                    MsgBox("Vennligst skriv inn gyldig pris og rabatt!", "Ugyldig input", "Icon!")
+                    return
+                }
+                
+                HotIfWinActive("ahk_id " rabattGui.Hwnd)
+                Hotkey("Enter", "Off")
+                HotIfWinActive()
+                
+                rabattGui.Destroy()
+                Send(resultText)
+                
+            } catch as e {
+                ShowError("Send rabattert pris", e)
+            }
+        }
+        
+        CopyDiscountedPrice() {
+            try {
+                resultText := Trim(StrReplace(resultValue.Text, " kr", ""))
+                
+                if (resultText = "" || resultText = "Skriv inn pris" || resultText = "Ugyldig %" || resultText = "Feil") {
+                    MsgBox("Vennligst skriv inn gyldig pris og rabatt!", "Ugyldig input", "Icon!")
+                    return
+                }
+                
+                A_Clipboard := resultText
+                TrayTip(resultText " kr kopiert til utklippstavlen", "Kopiert!", 0x1)
+                
+            } catch as e {
+                ShowError("Kopier rabattert pris", e)
+            }
+        }
+        
     } catch as e {
-        ShowError("Rabatt dialog", e)
+        ShowError("Rabatt kalkulator", e)
     }
 }
 
@@ -1538,5 +1632,5 @@ A_TrayMenu.Add("&Avslutt", (*) => ExitApp())
 A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
-TrayTip("✅ BNH v5.2 Blackbox Edition startet! Auto-update aktivert.", APP_TITLE " " SCRIPT_VERSION, 0x1)
+TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
 
