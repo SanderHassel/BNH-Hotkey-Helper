@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.5 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.4 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-17
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.5"  ; Oppdatert fra "5.4"
+global SCRIPT_VERSION := "5.4"  ; Oppdatert fra "5.3"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
