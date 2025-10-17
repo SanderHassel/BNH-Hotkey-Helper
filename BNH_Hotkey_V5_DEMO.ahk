@@ -9,13 +9,13 @@
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.2"  ; Oppdatert fra "4.5"
+global SCRIPT_VERSION := "5.3"  ; Oppdatert fra "5.2"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
 ; --- AUTO-UPDATE KONFIGURASJON ---
 global UPDATE_URL := "https://raw.githubusercontent.com/SanderHassel/BNH-Hotkey-Helper/refs/heads/main/BNH_Hotkey_V5_DEMO.ahk"
-global UPDATE_INTERVAL := 1800000  ; 30 minutter i millisekunder (30 * 60 * 1000)
+global UPDATE_INTERVAL := 60000  ; 30 minutter i millisekunder (30 * 60 * 1000)
 global LAST_UPDATE_FILE := A_ScriptDir "\last_update.txt"
 
 ; Start auto-update timer
@@ -46,11 +46,14 @@ global DEKK_PATHS := {
 }
 
 ; ============================================================================
-; AUTO-UPDATE SYSTEM - v6.0
+; AUTO-UPDATE SYSTEM - v6.0 (MED TRAYTIP-NOTIFIKASJONER)
 ; ============================================================================
 
 CheckForUpdates() {
     try {
+        ; ✅ VIS AT SJEKK STARTER
+        TrayTip("🔄 Sjekker for oppdateringer...", "BNH Auto-Update", 0x1)
+        
         ; Last ned ny versjon til temp-fil
         tempFile := A_Temp "\BNH_Hotkey_Helper_Update.ahk"
         
@@ -58,7 +61,8 @@ CheckForUpdates() {
         try {
             Download(UPDATE_URL, tempFile)
         } catch as e {
-            ; Silent fail hvis ingen internett
+            ; ✅ FEIL VED NEDLASTING (ingen internett)
+            TrayTip("❌ Kunne ikke sjekke oppdateringer`n`nKontroller internettforbindelsen.", "BNH Auto-Update", 0x3)
             return
         }
         
@@ -67,20 +71,25 @@ CheckForUpdates() {
         
         if (newVersion = "") {
             FileDelete(tempFile)
+            ; ✅ UGYLDIG FIL
+            TrayTip("⚠️ Kunne ikke lese versjonsnummer fra oppdateringsfil", "BNH Auto-Update", 0x2)
             return
         }
         
         ; Sammenlign versjoner
         if (newVersion != SCRIPT_VERSION) {
-            ; NY VERSJON FUNNET!
+            ; ✅ NY VERSJON FUNNET!
+            TrayTip("🎉 Ny versjon funnet!`n`nOppdaterer fra v" SCRIPT_VERSION " til v" newVersion "...", "BNH Auto-Update", 0x1)
             UpdateScript(tempFile, newVersion)
         } else {
-            ; Samme versjon, slett temp-fil
+            ; ✅ SAMME VERSJON - INGEN OPPDATERING
             FileDelete(tempFile)
+            TrayTip("✅ Du har nyeste versjon (v" SCRIPT_VERSION ")", "BNH Auto-Update", 0x1)
         }
         
     } catch as e {
-        ; Silent fail
+        ; ✅ UKJENT FEIL
+        TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
     }
 }
 
@@ -114,8 +123,8 @@ UpdateScript(newFilePath, newVersion) {
         ; Slett temp-fil
         FileDelete(newFilePath)
         
-        ; Vis notifikasjon
-        ShowQuietNotification("🎉 Oppdatering fullført! Oppdatert fra v" SCRIPT_VERSION " til v" newVersion ". Reloader om 3 sekunder...", 3000)
+        ; ✅ VIS SUKSESS-MELDING
+        TrayTip("🎉 Oppdatering fullført!`n`nOppdatert fra v" SCRIPT_VERSION " til v" newVersion "`n`nReloader om 3 sekunder...", "BNH Auto-Update", 0x1)
         
         ; Logg oppdatering
         timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
@@ -1529,4 +1538,4 @@ A_TrayMenu.Add("&Avslutt", (*) => ExitApp())
 A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
-ShowQuietNotification("✓ BNH v5.2 startet! Auto-update aktivert.", 3000)
+TrayTip("✅ BNH v5.2 Blackbox Edition startet! Auto-update aktivert.", APP_TITLE " " SCRIPT_VERSION, 0x1)
