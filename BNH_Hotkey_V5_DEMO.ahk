@@ -1,4 +1,4 @@
-﻿#Requires AutoHotkey v2.0
+#Requires AutoHotkey v2.0
 #SingleInstance Force
 #Warn
 
@@ -9,9 +9,20 @@
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.0"
+global SCRIPT_VERSION := "5.2"  ; Oppdatert fra "4.5"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
+
+; --- AUTO-UPDATE KONFIGURASJON ---
+global UPDATE_URL := "https://raw.githubusercontent.com/SanderHassel/BNH-Hotkey-Helper/refs/heads/main/BNH_Hotkey_V5_DEMO.ahk"
+global UPDATE_INTERVAL := 1800000  ; 30 minutter i millisekunder (30 * 60 * 1000)
+global LAST_UPDATE_FILE := A_ScriptDir "\last_update.txt"
+
+; Start auto-update timer
+SetTimer(CheckForUpdates, UPDATE_INTERVAL)
+
+; Sjekk også ved oppstart (etter 10 sekunder)
+SetTimer(() => CheckForUpdates(), -10000)
 
 ; Farger
 global COLORS := {
@@ -32,6 +43,94 @@ global COLORS := {
 global DEKK_PATHS := {
     Continental: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Continental vår 2025.xlsx",
     Nokian: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Nokian vår 2025.xlsx"
+}
+
+; ============================================================================
+; AUTO-UPDATE SYSTEM - v6.0
+; ============================================================================
+
+CheckForUpdates() {
+    try {
+        ; Last ned ny versjon til temp-fil
+        tempFile := A_Temp "\BNH_Hotkey_Helper_Update.ahk"
+        
+        ; Last ned med Download (AHK v2)
+        try {
+            Download(UPDATE_URL, tempFile)
+        } catch as e {
+            ; Silent fail hvis ingen internett
+            return
+        }
+        
+        ; Les ny versjon nummer fra nedlastet fil
+        newVersion := ExtractVersionFromFile(tempFile)
+        
+        if (newVersion = "") {
+            FileDelete(tempFile)
+            return
+        }
+        
+        ; Sammenlign versjoner
+        if (newVersion != SCRIPT_VERSION) {
+            ; NY VERSJON FUNNET!
+            UpdateScript(tempFile, newVersion)
+        } else {
+            ; Samme versjon, slett temp-fil
+            FileDelete(tempFile)
+        }
+        
+    } catch as e {
+        ; Silent fail
+    }
+}
+
+ExtractVersionFromFile(filePath) {
+    try {
+        fileContent := FileRead(filePath)
+        
+        ; Søk etter: global SCRIPT_VERSION := "X.X"
+        if RegExMatch(fileContent, 'global SCRIPT_VERSION := "([^"]+)"', &match) {
+            return match[1]
+        }
+        
+        return ""
+    } catch {
+        return ""
+    }
+}
+
+UpdateScript(newFilePath, newVersion) {
+    try {
+        ; Lag backup av nåværende script
+        backupFile := A_ScriptDir "\BNH_Hotkey_Helper_BACKUP_v" SCRIPT_VERSION ".ahk"
+        
+        try {
+            FileCopy(A_ScriptFullPath, backupFile, 1)
+        }
+        
+        ; Erstatt nåværende script med ny versjon
+        FileCopy(newFilePath, A_ScriptFullPath, 1)
+        
+        ; Slett temp-fil
+        FileDelete(newFilePath)
+        
+        ; Vis notifikasjon
+        ShowQuietNotification("🎉 Oppdatering fullført! Oppdatert fra v" SCRIPT_VERSION " til v" newVersion ". Reloader om 3 sekunder...", 3000)
+        
+        ; Logg oppdatering
+        timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
+        logEntry := timestamp " - Oppdatert fra v" SCRIPT_VERSION " til v" newVersion "`n"
+        FileAppend(logEntry, LAST_UPDATE_FILE)
+        
+        ; Vent 3 sekunder før reload
+        Sleep(3000)
+        
+        ; Reload scriptet
+        Reload()
+        
+    } catch as e {
+        MsgBox("❌ Oppdateringsfeil:`n`n" e.Message, "Auto-Update", "Icon!")
+    }
 }
 
 ; ============================================================================
@@ -1415,17 +1514,19 @@ A_TrayMenu.Add("&Hjelp (Ctrl+Shift+H)", (*) => ShowHelpDialog())
 A_TrayMenu.Add("📊 &Statistikk", (*) => ShowStatsDialog())
 A_TrayMenu.Add("&Væske-søk (Ctrl+Alt+B)", (*) => ShowFluidSearchDialog())
 A_TrayMenu.Add()
+A_TrayMenu.Add("🔄 Sjekk oppdateringer", (*) => CheckForUpdates())
+A_TrayMenu.Add()
 A_TrayMenu.Add("⚙️ &Autofacet Setup Hub (Ctrl+Shift+P)", (*) => Send("^+P"))
 A_TrayMenu.Add("💾 LAGRE (Ctrl+Shift+1)", (*) => Send("^+1"))
 A_TrayMenu.Add("📅 PLANNER (Ctrl+Shift+2)", (*) => Send("^+2"))
 A_TrayMenu.Add("💬 KOMMUNIKASJON (Ctrl+Shift+3)", (*) => Send("^+3"))
 A_TrayMenu.Add("📋 HISTORIKK (Ctrl+Shift+4)", (*) => Send("^+4"))
 A_TrayMenu.Add("🔄 OPPDATERINGER (Ctrl+Shift+5)", (*) => Send("^+5"))
-A_TrayMenu.Add("📝 ARBEIDSORDRE (Ctrl+Shift+|)", (*) => Send("^+|"))  ; ✅ NY LINJE
+A_TrayMenu.Add("📝 ARBEIDSORDRE (Ctrl+Shift+|)", (*) => Send("^+|"))
 A_TrayMenu.Add()
 A_TrayMenu.Add("&Reload (Ctrl+Shift+R)", (*) => Reload())
 A_TrayMenu.Add("&Avslutt", (*) => ExitApp())
 A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
-; ✅ Startup melding
-TrayTip("✅ v5.1 Blackbox Edition startet!", APP_TITLE " v5.1", 0x1)
+; Startup melding
+ShowQuietNotification("✓ BNH v5.2 startet! Auto-update aktivert.", 3000)
