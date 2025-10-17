@@ -52,7 +52,7 @@ global DEKK_PATHS := {
 CheckForUpdates() {
     try {
         ; ✅ VIS AT SJEKK STARTER
-        TrayTip("🔄 Sjekker for oppdateringer...", "BNH Auto-Update", 0x1)
+        TrayTip("🔄 Sjekker for oppdateringer...", "BNH Auto-Update", 0x1 | 0x10)
         
         ; Last ned ny versjon til temp-fil
         tempFile := A_Temp "\BNH_Hotkey_Helper_Update.ahk"
@@ -84,7 +84,7 @@ CheckForUpdates() {
         } else {
             ; ✅ SAMME VERSJON - INGEN OPPDATERING
             FileDelete(tempFile)
-            TrayTip("✅ Du har nyeste versjon (v" SCRIPT_VERSION ")", "BNH Auto-Update", 0x1)
+            TrayTip("✅ Du har nyeste versjon (v" SCRIPT_VERSION ")", "BNH Auto-Update", 0x1 | 0x10)
         }
         
     } catch as e {
@@ -1633,5 +1633,3 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
-
-
