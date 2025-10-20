@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.4 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.5 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-17
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.4"  ; Oppdatert fra "5.3"
+global SCRIPT_VERSION := "5.5"  ; Oppdatert fra "5.4"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -174,8 +174,8 @@ UpdateScript(newFilePath, newVersion) {
 ^+Q:: {
     try {
         TrackUsage("Rabatt kalkulator")
-        if !ValidateClipboard("Kopier et tall først.")
-            return
+        ; ✅ Åpne kalkulatoren uten å kreve clipboard
+        ; Hvis clipboard inneholder et gyldig tall, bruk det - ellers tomt
         ShowDiscountDialog(A_Clipboard)
     } catch as e {
         ShowError("Rabatt kalkulator", e)
@@ -1150,33 +1150,40 @@ ShowDiscountDialog(originalValue := "") {
         originalLabel := rabattGui.Add("Text", "w320 h20 c" COLORS.TEXT_GRAY " xs y+15", "Original pris:")
         originalLabel.SetFont("s9", "Segoe UI")
         
-        ; VALIDER CLIPBOARD - KUN BRUK HVIS DET ER ETT RENT TALL
+        ; ✅ VALIDER CLIPBOARD - KUN BRUK HVIS DET ER ETT RENT TALL
         cleanValue := ""
         if (originalValue != "") {
-            ; Trim whitespace først
             testValue := Trim(originalValue)
             
-            ; SJEKK 1: Må være relativt kort (maks 15 tegn for å være ett tall)
             if (StrLen(testValue) > 15) {
-                cleanValue := ""  ; For langt, sannsynligvis tekst
+                cleanValue := ""
             }
-            ; SJEKK 2: Må matche mønster for ett enkelt tall
-            ; Tillatt: "1990", "1990.50", "1 990", "1.990,50", "1990,-"
             else if RegExMatch(testValue, "^[\s\d\.,\-]+$") {
-                ; Fjern alle unntatt siffer
-                numericOnly := RegExReplace(testValue, "[^\d]", "")
+                ; ✅ NORMALISER DESIMALFORMAT
+                normalized := StrReplace(testValue, " ", "")
+                normalized := StrReplace(normalized, Chr(160), "")
                 
-                ; SJEKK 3: Må ha minst 1 siffer og ikke være for langt
-                if (numericOnly != "" && StrLen(numericOnly) <= 10 && IsNumber(numericOnly)) {
-                    finalValue := Integer(numericOnly)
+                ; ✅ HÅNDTER BÅDE KOMMA OG PUNKTUM
+                if (InStr(normalized, ".") && InStr(normalized, ",")) {
+                    normalized := StrReplace(normalized, ".", "")
+                    normalized := StrReplace(normalized, ",", ".")
+                }
+                else if (InStr(normalized, ",")) {
+                    normalized := StrReplace(normalized, ",", ".")
+                }
+                
+                normalized := RegExReplace(normalized, "[,\.]\-$", "")
+                
+                ; ✅ KONVERTER OG RUND OPP
+                if (IsNumber(normalized)) {
+                    floatValue := Float(normalized)
+                    finalValue := Integer(Ceil(floatValue))
                     
-                    ; SJEKK 4: Må være positivt og fornuftig (1-10 000 000)
                     if (finalValue > 0 && finalValue <= 10000000) {
                         cleanValue := String(finalValue)
                     }
                 }
             }
-            ; Hvis ingen match, forblir cleanValue tom
         }
         
         originalInput := rabattGui.Add("Edit", "w320 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM " xs y+5", cleanValue)
@@ -1310,7 +1317,7 @@ ShowDiscountDialog(originalValue := "") {
                 }
                 
                 A_Clipboard := resultText
-                TrayTip(resultText " kr kopiert til utklippstavlen", "Kopiert!", 0x1)
+                TrayTip(resultText " kr kopiert til utklippstavlen", "Kopiert!", 0x1 | 0x10)
                 
             } catch as e {
                 ShowError("Kopier rabattert pris", e)
