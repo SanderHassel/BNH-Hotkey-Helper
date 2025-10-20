@@ -15,7 +15,7 @@ global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
 ; --- AUTO-UPDATE KONFIGURASJON ---
 global UPDATE_URL := "https://raw.githubusercontent.com/SanderHassel/BNH-Hotkey-Helper/refs/heads/main/BNH_Hotkey_V5_DEMO.ahk"
-global UPDATE_INTERVAL := 3600000  ; 60 minutter i millisekunder (60 * 60 * 1000)
+global UPDATE_INTERVAL := 7200000  ; 120 minutter i millisekunder (60 * 120 * 1000)
 global LAST_UPDATE_FILE := A_ScriptDir "\last_update.txt"
 
 ; Start auto-update timer
