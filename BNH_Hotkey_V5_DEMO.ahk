@@ -5,7 +5,7 @@
 ; ============================================================================
 ; BNH HOTKEY HELPER v5.5 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-17
+; Sist oppdatert: 2025-10-20
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
@@ -1640,4 +1640,5 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
+
 
