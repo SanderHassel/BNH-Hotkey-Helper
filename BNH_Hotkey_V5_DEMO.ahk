@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.5 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.6 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-20
+; Sist oppdatert: 2025-10-17
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.5"  ; Oppdatert fra "5.4"
+global SCRIPT_VERSION := "5.6"  ; Oppdatert fra "5.5"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -233,6 +233,15 @@ UpdateScript(newFilePath, newVersion) {
 }
 
 ^+A:: {
+    try {
+        TrackUsage("Nøkkelautomat tekst")
+        SendText("(nøkkelautomat utenfor åpningstid)")
+    } catch as e {
+        ShowError("Nøkkelautomat tekst", e)
+    }
+}
+
+^+N:: {
     try {
         TrackUsage("Nøkkelautomat tekst")
         SendText("(nøkkelautomat utenfor åpningstid)")
@@ -1466,6 +1475,7 @@ GetHotkeysMap() {
             "Ctrl + Shift + W", "(20% Rabatt Inkludert)",
             "Ctrl + Shift + M", "MDH Bestilt Levert",
             "Ctrl + Shift + A", "(nøkkelautomat utenfor åpningstid)",
+            "Ctrl + Shift + N", "(nøkkelautomat utenfor åpningstid)",
             "Ctrl + Shift + S", "Serviceavtale",
             "Ctrl + Shift + D", "Åpner dekktilbud-meny",
             "Ctrl + Shift + H", "Viser denne hjelpeboksen",
@@ -1476,7 +1486,7 @@ GetHotkeysMap() {
             "Ctrl + Shift + 3", "💬 KOMMUNIKASJON i Autofacet",
             "Ctrl + Shift + 4", "📋 HISTORIKK i Autofacet",
             "Ctrl + Shift + 5", "🔄 OPPDATERINGER i Autofacet",
-            "Ctrl + Shift + |", "📝 ARBEIDSORDRE i Autofacet"  ; ✅ NY LINJE
+            "Ctrl + Shift + |", "📝 ARBEIDSORDRE i Autofacet"  ;
         )
     }
     return hotkeyMap
@@ -1640,5 +1650,4 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
-
 
