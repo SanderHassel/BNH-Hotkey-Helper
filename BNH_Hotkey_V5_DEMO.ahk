@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.6 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.7 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-17
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.6"  ; Oppdatert fra "5.5"
+global SCRIPT_VERSION := "5.7"  ; Oppdatert fra "5.6"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1474,8 +1474,8 @@ GetHotkeysMap() {
             "Ctrl + Shift + F", "Nissan Frostvæske (00000-01F00)",
             "Ctrl + Shift + W", "(20% Rabatt Inkludert)",
             "Ctrl + Shift + M", "MDH Bestilt Levert",
-            "Ctrl + Shift + A", "(nøkkelautomat utenfor åpningstid)",
-            "Ctrl + Shift + N", "(nøkkelautomat utenfor åpningstid)",
+            "Ctrl + Shift + A", "(eller bruk nøkkelautomat utenfor åpningstid)",
+            "Ctrl + Shift + N", "(eller bruk nøkkelautomat utenfor åpningstid)",
             "Ctrl + Shift + S", "Serviceavtale",
             "Ctrl + Shift + D", "Åpner dekktilbud-meny",
             "Ctrl + Shift + H", "Viser denne hjelpeboksen",
