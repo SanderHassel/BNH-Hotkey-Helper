@@ -51,7 +51,7 @@ global DEKK_PATHS := {
 
 CheckForUpdates() {
     try {
-        ; ✅ VIS AT SJEKK STARTER
+        ; VIS AT SJEKK STARTER
         TrayTip("🔄 Sjekker for oppdateringer...", "BNH Auto-Update", 0x1 | 0x10)
         
         ; Last ned ny versjon til temp-fil
@@ -61,7 +61,7 @@ CheckForUpdates() {
         try {
             Download(UPDATE_URL, tempFile)
         } catch as e {
-            ; ✅ FEIL VED NEDLASTING (ingen internett)
+            ; FEIL VED NEDLASTING (ingen internett)
             TrayTip("❌ Kunne ikke sjekke oppdateringer`n`nKontroller internettforbindelsen.", "BNH Auto-Update", 0x3)
             return
         }
@@ -71,24 +71,24 @@ CheckForUpdates() {
         
         if (newVersion = "") {
             FileDelete(tempFile)
-            ; ✅ UGYLDIG FIL
+            ; UGYLDIG FIL
             TrayTip("⚠️ Kunne ikke lese versjonsnummer fra oppdateringsfil", "BNH Auto-Update", 0x2)
             return
         }
         
         ; Sammenlign versjoner
         if (newVersion != SCRIPT_VERSION) {
-            ; ✅ NY VERSJON FUNNET!
+            ; NY VERSJON FUNNET!
             TrayTip("🎉 Ny versjon funnet!`n`nOppdaterer fra v" SCRIPT_VERSION " til v" newVersion "...", "BNH Auto-Update", 0x1)
             UpdateScript(tempFile, newVersion)
         } else {
-            ; ✅ SAMME VERSJON - INGEN OPPDATERING
+            ; SAMME VERSJON - INGEN OPPDATERING
             FileDelete(tempFile)
             TrayTip("✅ Du har nyeste versjon (v" SCRIPT_VERSION ")", "BNH Auto-Update", 0x1 | 0x10)
         }
         
     } catch as e {
-        ; ✅ UKJENT FEIL
+        ; UKJENT FEIL
         TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
     }
 }
@@ -123,7 +123,7 @@ UpdateScript(newFilePath, newVersion) {
         ; Slett temp-fil
         FileDelete(newFilePath)
         
-        ; ✅ VIS SUKSESS-MELDING
+        ; VIS SUKSESS-MELDING
         TrayTip("🎉 Oppdatering fullført!`n`nOppdatert fra v" SCRIPT_VERSION " til v" newVersion "`n`nReloader om 3 sekunder...", "BNH Auto-Update", 0x1)
         
         ; Logg oppdatering
@@ -317,7 +317,7 @@ ShowAutofacetSetupHub() {
     infoText := setupGui.Add("Text", "x30 y90 w640 h30 c" COLORS.TEXT_GRAY, "Konfigurer hurtigtaster for ulike Autofacet-funksjoner:")
     infoText.SetFont("s10", "Segoe UI")
     
-    ; ✅ NULLPUNKT-KORT (ALLTID FØRST)
+    ; NULLPUNKT-KORT (ALLTID FØRST)
     nullpunktModule := {
         name: "NULLPUNKT", 
         shortcut: "Klikkes etter hver handling", 
@@ -394,7 +394,7 @@ StartModuleSetup(moduleName, shortcut) {
     try {
         TrackUsage("Setup: " moduleName)
         
-        ; ✅ SPESIELL INSTRUKSJON FOR NULLPUNKT
+        ; SPESIELL INSTRUKSJON FOR NULLPUNKT
         if (moduleName = "NULLPUNKT") {
             setupText := "🎯 Konfigurer NULLPUNKT:`n`n"
             setupText .= "NULLPUNKTET brukes til å fjerne blå markering etter klikk.`n`n"
@@ -434,7 +434,7 @@ StartModuleSetup(moduleName, shortcut) {
         IniWrite(mx, configFile, configSection, "X")
         IniWrite(my, configFile, configSection, "Y")
         
-        ; ✅ BEKREFTELSE MED EMOJI
+        ; BEKREFTELSE MED EMOJI
         if (moduleName = "NULLPUNKT") {
             MsgBox("✅ Nullpunkt lagret!`n`n🎯 X: " mx "`n🎯 Y: " my "`n`n💡 Dette punktet klikkes etter hver handling for å fjerne blå markering.", "Suksess", "Iconi T4")
         } else {
@@ -484,7 +484,7 @@ StartModuleSetup(moduleName, shortcut) {
         MouseGetPos(&origX, &origY)
         
         if FindAndClickButton("LAGRE") {
-            ; ✅ Suksess - ingen feedback
+            ; Suksess - ingen feedback
             Sleep(50)
             MouseMove(origX, origY)
         } else {
@@ -1159,7 +1159,7 @@ ShowDiscountDialog(originalValue := "") {
         originalLabel := rabattGui.Add("Text", "w320 h20 c" COLORS.TEXT_GRAY " xs y+15", "Original pris:")
         originalLabel.SetFont("s9", "Segoe UI")
         
-        ; ✅ VALIDER CLIPBOARD - KUN BRUK HVIS DET ER ETT RENT TALL
+        ; VALIDER CLIPBOARD - KUN BRUK HVIS DET ER ETT RENT TALL
         cleanValue := ""
         if (originalValue != "") {
             testValue := Trim(originalValue)
@@ -1168,11 +1168,11 @@ ShowDiscountDialog(originalValue := "") {
                 cleanValue := ""
             }
             else if RegExMatch(testValue, "^[\s\d\.,\-]+$") {
-                ; ✅ NORMALISER DESIMALFORMAT
+                ; NORMALISER DESIMALFORMAT
                 normalized := StrReplace(testValue, " ", "")
                 normalized := StrReplace(normalized, Chr(160), "")
                 
-                ; ✅ HÅNDTER BÅDE KOMMA OG PUNKTUM
+                ; HÅNDTER BÅDE KOMMA OG PUNKTUM
                 if (InStr(normalized, ".") && InStr(normalized, ",")) {
                     normalized := StrReplace(normalized, ".", "")
                     normalized := StrReplace(normalized, ",", ".")
@@ -1183,7 +1183,7 @@ ShowDiscountDialog(originalValue := "") {
                 
                 normalized := RegExReplace(normalized, "[,\.]\-$", "")
                 
-                ; ✅ KONVERTER OG RUND OPP
+                ; KONVERTER OG RUND OPP
                 if (IsNumber(normalized)) {
                     floatValue := Float(normalized)
                     finalValue := Integer(Ceil(floatValue))
