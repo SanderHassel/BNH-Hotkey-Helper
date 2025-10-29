@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.8 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.9 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-17
+; Sist oppdatert: 2025-10-29
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.8"  ; Oppdatert fra "5.7"
+global SCRIPT_VERSION := "5.9"  ; Oppdatert fra "5.8"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -646,6 +646,48 @@ ShowQuietNotification(message, duration := 2500) {
 }
 
 ; ============================================================================
+; FUNKSJONER - REGNUMMER VALIDERING
+; ============================================================================
+
+ValidateLicensePlate(text) {
+    try {
+        ; Trim og fjern mellomrom
+        cleaned := Trim(text)
+        cleaned := StrReplace(cleaned, " ", "")
+        cleaned := StrReplace(cleaned, Chr(160), "")  ; Non-breaking space
+        
+        ; MØNSTER: 2 bokstaver + 5 tall (norsk regnummer)
+        ; Eksempel: EB25688, AB12345
+        if RegExMatch(cleaned, "^[A-ZÆØÅa-zæøå]{2}\d{5}$") {
+            ; Konverter til store bokstaver
+            return StrUpper(cleaned)
+        }
+        
+        ; Ikke gyldig regnummer
+        return ""
+    } catch {
+        return ""
+    }
+}
+
+ProcessHotstringWithPlate(templateText) {
+    try {
+        ; Sjekk om clipboard inneholder et gyldig regnummer
+        licensePlate := ValidateLicensePlate(A_Clipboard)
+        
+        ; Hvis gyldig, erstatt {LICENSEPLATE}
+        if (licensePlate != "") {
+            return StrReplace(templateText, "{LICENSEPLATE}", licensePlate)
+        }
+        
+        ; Hvis ikke gyldig, behold {LICENSEPLATE} som placeholder
+        return templateText
+    } catch {
+        return templateText
+    }
+}
+
+; ============================================================================
 ; HOTSTRINGS - STANDARD TEKSTER
 ; ============================================================================
 
@@ -685,7 +727,8 @@ ShowQuietNotification(message, duration := 2500) {
 {
     try {
         TrackUsage("Hotstring: *opsms-")
-        SendText("Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: XXXXX. Bestill time raskt og enkelt på nett: https://service.bnh.no/ Hilsen Birger N. Haug / 40010400 SMS kan ikke besvares.")
+        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Bestill time raskt og enkelt på nett: https://service.bnh.no/ Hilsen Birger N. Haug / 40010400."
+        SendText(ProcessHotstringWithPlate(template))
     }
 }
 
@@ -693,7 +736,8 @@ ShowQuietNotification(message, duration := 2500) {
 {
     try {
         TrackUsage("Hotstring: *opsms+")
-        SendText("Hei, vi har forsøkt å ringe deg. Det er på tide med service på XXXXX. Du har allerede en forhåndsbetalt serviceavtale. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug.")
+        template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+        SendText(ProcessHotstringWithPlate(template))
     }
 }
 
@@ -1168,11 +1212,9 @@ ShowDiscountDialog(originalValue := "") {
                 cleanValue := ""
             }
             else if RegExMatch(testValue, "^[\s\d\.,\-]+$") {
-                ; NORMALISER DESIMALFORMAT
                 normalized := StrReplace(testValue, " ", "")
                 normalized := StrReplace(normalized, Chr(160), "")
                 
-                ; HÅNDTER BÅDE KOMMA OG PUNKTUM
                 if (InStr(normalized, ".") && InStr(normalized, ",")) {
                     normalized := StrReplace(normalized, ".", "")
                     normalized := StrReplace(normalized, ",", ".")
@@ -1183,7 +1225,6 @@ ShowDiscountDialog(originalValue := "") {
                 
                 normalized := RegExReplace(normalized, "[,\.]\-$", "")
                 
-                ; KONVERTER OG RUND OPP
                 if (IsNumber(normalized)) {
                     floatValue := Float(normalized)
                     finalValue := Integer(Ceil(floatValue))
@@ -1197,7 +1238,7 @@ ShowDiscountDialog(originalValue := "") {
         
         originalInput := rabattGui.Add("Edit", "w320 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM " xs y+5", cleanValue)
         originalInput.SetFont("s11", "Segoe UI")
-        originalInput.OnEvent("Change", (*) => CalculateDiscount())
+        originalInput.OnEvent("Change", (*) => CleanAndCalculate())
         
         rabattLabel := rabattGui.Add("Text", "w320 h20 c" COLORS.TEXT_GRAY " xs y+15", "Rabatt (%):")
         rabattLabel.SetFont("s9", "Segoe UI")
@@ -1259,6 +1300,50 @@ ShowDiscountDialog(originalValue := "") {
             try {
                 rabattInput.Value := value
                 rabattUpDown.Value := value
+                CalculateDiscount()
+            }
+        }
+        
+        CleanAndCalculate() {
+            try {
+                currentValue := originalInput.Text
+                
+                ; Skip hvis allerede er rent tall
+                if (RegExMatch(currentValue, "^\d+$")) {
+                    CalculateDiscount()
+                    return
+                }
+                
+                ; Rens input
+                if (currentValue != "" && RegExMatch(currentValue, "[\d\.,\-\s]+")) {
+                    normalized := StrReplace(currentValue, " ", "")
+                    normalized := StrReplace(normalized, Chr(160), "")
+                    
+                    if (InStr(normalized, ".") && InStr(normalized, ",")) {
+                        normalized := StrReplace(normalized, ".", "")
+                        normalized := StrReplace(normalized, ",", ".")
+                    }
+                    else if (InStr(normalized, ",")) {
+                        normalized := StrReplace(normalized, ",", ".")
+                    }
+                    
+                    normalized := RegExReplace(normalized, "[,\.]\-$", "")
+                    
+                    if (IsNumber(normalized)) {
+                        floatValue := Float(normalized)
+                        cleanedValue := Integer(Ceil(floatValue))
+                        
+                        if (String(cleanedValue) != currentValue) {
+                            cursorPos := StrLen(String(cleanedValue))
+                            originalInput.Value := String(cleanedValue)
+                            SendMessage(0xB1, cursorPos, cursorPos, originalInput)
+                        }
+                    }
+                }
+                
+                CalculateDiscount()
+                
+            } catch {
                 CalculateDiscount()
             }
         }
