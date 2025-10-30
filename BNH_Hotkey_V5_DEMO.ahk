@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.9 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v5.9.1 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-29
+; Sist oppdatert: 2025-10-30
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.9"  ; Oppdatert fra "5.8"
+global SCRIPT_VERSION := "5.9.1"  ; Oppdatert fra "5.9"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -262,6 +262,25 @@ UpdateScript(newFilePath, newVersion) {
 ; ============================================================================
 ; HOTKEYS - SYSTEM
 ; ============================================================================
+
+^+J:: {
+    try {
+        TrackUsage("Easter Egg: Ctrl+Shift+J")
+        
+        ; Åpne i kiosk-modus (Chrome)
+        Run('chrome.exe --kiosk "https://ih1.redbubble.net/image.5166131951.3868/flat,750x,075,f-pad,750x1000,f8f8f8.u9.jpg"')
+        
+    } catch as e {
+        ; Fallback til normal åpning hvis Chrome ikke funnet
+        try {
+            Run("https://ih1.redbubble.net/image.5166131951.3868/flat,750x,075,f-pad,750x1000,f8f8f8.u9.jpg")
+            Sleep(1500)
+            Send("{F11}")
+        } catch {
+            ShowError("Open Link", e)
+        }
+    }
+}
 
 ^+R:: {
     try {
@@ -1735,4 +1754,3 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
-
