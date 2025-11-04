@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v5.9 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.0.1 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-30
+; Sist oppdatert: 2025-10-29
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "5.9"  ; Oppdatert fra "5.8"
+global SCRIPT_VERSION := "6.0.1"  ; Oppdatert fra "6.0.0"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -256,6 +256,15 @@ UpdateScript(newFilePath, newVersion) {
         SendText("Serviceavtale")
     } catch as e {
         ShowError("Serviceavtale", e)
+    }
+}
+
+^+X:: {
+    try {
+        TrackUsage("Vetner på bilen")
+        SendText("Venter på bilen")
+    } catch as e {
+        ShowError("Venter på bilen", e)
     }
 }
 
@@ -1584,6 +1593,7 @@ GetHotkeysMap() {
             "Ctrl + Shift + D", "Åpner dekktilbud-meny",
             "Ctrl + Shift + H", "Viser denne hjelpeboksen",
             "Ctrl + Shift + R", "Starter scriptet på nytt",
+            "Ctrl + Shift + X", "Venter på bilen",
             "Ctrl + Shift + P", "⚙️ Autofacet Setup Hub (konfigurer alle moduler)",
             "Ctrl + Shift + 1", "💾 LAGRE i Autofacet",
             "Ctrl + Shift + 2", "📅 PLANNER i Autofacet",
@@ -1754,5 +1764,3 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
-
-
