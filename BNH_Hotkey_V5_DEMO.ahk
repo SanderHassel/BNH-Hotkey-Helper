@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.0 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.1 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-29
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.0"  ; Oppdatert fra "6.0.2"
+global SCRIPT_VERSION := "6.1.1"  ; Oppdatert fra "6.1.0"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -197,6 +197,33 @@ CheckForUpdates() {
     }
 }
 
++F5:: {
+    try {
+        TrackUsage("Clear Cookies + Refresh (Shift+F5)")
+        
+        if !WinActive("ahk_exe msedge.exe") {
+            ShowQuietNotification("⚠️ Fungerer kun i Microsoft Edge")
+            return
+        }
+        
+        ; Åpne clear-dialog og la brukeren fullføre
+        Send("^+{Delete}")
+        
+        TrayTip("👆 Trykk 'Clear now' i dialogen`n`nSiden vil refreshe automatisk når du lukker dialogen", "Slett Cookies", 0x1 | 0x10)
+        
+        ; Vent til dialogen lukkes
+        WinWaitNotActive("ahk_exe msedge.exe",, 5)
+        
+        ; Refresh
+        Send("^w")  ; Lukk settings-tab
+        Sleep(300)
+        Send("^r")  ; Hard refresh
+        ShowQuietNotification("✅ Siden refreshet!")
+        
+    } catch as e {
+        ShowError("Clear Cookies", e)
+    }
+}
 
 ; ============================================================================
 ; HOTKEYS - HURTIG TEKST
