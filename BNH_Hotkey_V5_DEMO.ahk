@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.0.1 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.0.2 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-29
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.0.1"  ; Oppdatert fra "6.0.0"
+global SCRIPT_VERSION := "6.0.2"  ; Oppdatert fra "6.0.1"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -41,8 +41,8 @@ global COLORS := {
 
 ; Dekk prisliste paths (oppdater årlig)
 global DEKK_PATHS := {
-    Continental: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Continental vår 2025.xlsx",
-    Nokian: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Nokian vår 2025.xlsx"
+    Continental: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Continental høst 2025.xlsx",
+    Nokian: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Nokian høst 2025.xlsx"
 }
 
 ; ============================================================================
@@ -1764,3 +1764,4 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
+
