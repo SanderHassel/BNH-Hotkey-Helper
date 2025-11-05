@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.0.2 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.0.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-29
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.0.2"  ; Oppdatert fra "6.0.1"
+global SCRIPT_VERSION := "6.0.3"  ; Oppdatert fra "6.0.2"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -46,99 +46,105 @@ global DEKK_PATHS := {
 }
 
 ; ============================================================================
-; AUTO-UPDATE SYSTEM - v5.3 (MED TRAYTIP-NOTIFIKASJONER)
+; AUTO-UPDATE SYSTEM - v6.0 (MED SEMANTISK VERSJONERING)
 ; ============================================================================
-
-CheckForUpdates() {
-    try {
-        ; VIS AT SJEKK STARTER
-        TrayTip("🔄 Sjekker for oppdateringer...", "BNH Auto-Update", 0x1 | 0x10)
-        
-        ; Last ned ny versjon til temp-fil
-        tempFile := A_Temp "\BNH_Hotkey_Helper_Update.ahk"
-        
-        ; Last ned med Download (AHK v2)
-        try {
-            Download(UPDATE_URL, tempFile)
-        } catch as e {
-            ; FEIL VED NEDLASTING (ingen internett)
-            TrayTip("❌ Kunne ikke sjekke oppdateringer`n`nKontroller internettforbindelsen.", "BNH Auto-Update", 0x3)
-            return
-        }
-        
-        ; Les ny versjon nummer fra nedlastet fil
-        newVersion := ExtractVersionFromFile(tempFile)
-        
-        if (newVersion = "") {
-            FileDelete(tempFile)
-            ; UGYLDIG FIL
-            TrayTip("⚠️ Kunne ikke lese versjonsnummer fra oppdateringsfil", "BNH Auto-Update", 0x2)
-            return
-        }
-        
-        ; Sammenlign versjoner
-        if (newVersion != SCRIPT_VERSION) {
-            ; NY VERSJON FUNNET!
-            TrayTip("🎉 Ny versjon funnet!`n`nOppdaterer fra v" SCRIPT_VERSION " til v" newVersion "...", "BNH Auto-Update", 0x1)
-            UpdateScript(tempFile, newVersion)
-        } else {
-            ; SAMME VERSJON - INGEN OPPDATERING
-            FileDelete(tempFile)
-            TrayTip("✅ Du har nyeste versjon (v" SCRIPT_VERSION ")", "BNH Auto-Update", 0x1 | 0x10)
-        }
-        
-    } catch as e {
-        ; UKJENT FEIL
-        TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
-    }
-}
 
 ExtractVersionFromFile(filePath) {
     try {
         fileContent := FileRead(filePath)
-        
-        ; Søk etter: global SCRIPT_VERSION := "X.X"
         if RegExMatch(fileContent, 'global SCRIPT_VERSION := "([^"]+)"', &match) {
             return match[1]
         }
-        
         return ""
     } catch {
         return ""
     }
 }
 
+CompareVersions(version1, version2) {
+    try {
+        parts1 := StrSplit(version1, ".")
+        parts2 := StrSplit(version2, ".")
+        
+        while (parts1.Length < 3)
+            parts1.Push("0")
+        while (parts2.Length < 3)
+            parts2.Push("0")
+        
+        Loop 3 {
+            num1 := Integer(parts1[A_Index])
+            num2 := Integer(parts2[A_Index])
+            
+            if (num1 > num2)
+                return 1
+            else if (num1 < num2)
+                return -1
+        }
+        return 0
+    } catch {
+        return (version1 = version2) ? 0 : ((version1 > version2) ? 1 : -1)
+    }
+}
+
 UpdateScript(newFilePath, newVersion) {
     try {
-        ; Lag backup av nåværende script
         backupFile := A_ScriptDir "\BNH_Hotkey_Helper_BACKUP_v" SCRIPT_VERSION ".ahk"
         
         try {
             FileCopy(A_ScriptFullPath, backupFile, 1)
         }
         
-        ; Erstatt nåværende script med ny versjon
         FileCopy(newFilePath, A_ScriptFullPath, 1)
-        
-        ; Slett temp-fil
         FileDelete(newFilePath)
         
-        ; VIS SUKSESS-MELDING
         TrayTip("🎉 Oppdatering fullført!`n`nOppdatert fra v" SCRIPT_VERSION " til v" newVersion "`n`nReloader om 3 sekunder...", "BNH Auto-Update", 0x1)
         
-        ; Logg oppdatering
         timestamp := FormatTime(, "yyyy-MM-dd HH:mm:ss")
         logEntry := timestamp " - Oppdatert fra v" SCRIPT_VERSION " til v" newVersion "`n"
         FileAppend(logEntry, LAST_UPDATE_FILE)
         
-        ; Vent 3 sekunder før reload
         Sleep(3000)
-        
-        ; Reload scriptet
         Reload()
-        
     } catch as e {
         MsgBox("❌ Oppdateringsfeil:`n`n" e.Message, "Auto-Update", "Icon!")
+    }
+}
+
+CheckForUpdates() {
+    try {
+        TrayTip("🔄 Sjekker for oppdateringer...", "BNH Auto-Update", 0x1 | 0x10)
+        
+        tempFile := A_Temp "\BNH_Hotkey_Helper_Update.ahk"
+        
+        try {
+            Download(UPDATE_URL, tempFile)
+        } catch as e {
+            TrayTip("❌ Kunne ikke sjekke oppdateringer`n`nKontroller internettforbindelsen.", "BNH Auto-Update", 0x3)
+            return
+        }
+        
+        newVersion := ExtractVersionFromFile(tempFile)
+        
+        if (newVersion = "") {
+            FileDelete(tempFile)
+            TrayTip("⚠️ Kunne ikke lese versjonsnummer fra oppdateringsfil", "BNH Auto-Update", 0x2)
+            return
+        }
+        
+        versionComparison := CompareVersions(newVersion, SCRIPT_VERSION)
+        
+        if (versionComparison > 0) {
+            TrayTip("🎉 Ny versjon funnet!`n`nOppdaterer fra v" SCRIPT_VERSION " til v" newVersion "...", "BNH Auto-Update", 0x1)
+            UpdateScript(tempFile, newVersion)
+        } else if (versionComparison = 0) {
+            FileDelete(tempFile)
+            TrayTip("✅ Du har nyeste versjon (v" SCRIPT_VERSION ")", "BNH Auto-Update", 0x1 | 0x10)
+        } else {
+            FileDelete(tempFile)
+            TrayTip("ℹ️ Du bruker en nyere versjon (v" SCRIPT_VERSION ") enn publisert versjon (v" newVersion ")", "BNH Auto-Update", 0x1 | 0x10)
+        }
+    } catch as e {
+        TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
     }
 }
 
