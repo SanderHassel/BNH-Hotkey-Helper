@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.1 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.2 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-10-29
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.1"  ; Oppdatert fra "6.1.0"
+global SCRIPT_VERSION := "6.1.2"  ; Oppdatert fra "6.1.1"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -765,6 +765,14 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *info")
         SendText("Bilen leveres kl 08:00 og hentes kl 15:30. Du kan også levere/hente utenfor åpningstid i nøkkelautomat. Vi tilbyr leiebil fra 698,- pr døgn, må avtales minimum 48 timer før verkstedtimen. Du kan besvare denne e-posten eller ringe oss på tlf 400 10 400.")
+    }
+}
+
+:*:*inntil::
+{
+    try {
+        TrackUsage("Hotstring: *inntil")
+        SendText("*Inntil 1 time feilsøk.")
     }
 }
 
