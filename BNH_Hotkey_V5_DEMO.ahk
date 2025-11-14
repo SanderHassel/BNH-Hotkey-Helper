@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.2 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2025-10-29
+; Sist oppdatert: 2025-11-14
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.2"  ; Oppdatert fra "6.1.1"
+global SCRIPT_VERSION := "6.1.3"  ; Oppdatert fra "6.1.2"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -806,6 +806,24 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *opsms+")
         template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+        SendText(ProcessHotstringWithPlate(template))
+    }
+}
+
+:*:*opeu::
+{
+    try {
+        TrackUsage("Hotstring: *opeu")
+        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time raskt og enkelt på nett: Widget Hilsen Birger N. Haug / 40010400 SMS kan ikke besvares."
+        SendText(ProcessHotstringWithPlate(template))
+    }
+}
+
+:*:*opsmsg::
+{
+    try {
+        TrackUsage("Hotstring: *opsmsg")
+        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Jeg vil minne om at bilen din er 5 år 09.03.2025 og det er anbefalt å utføre service før dette. Ring oss gjerne tilbake på 40010400 slik at vi kan sette opp en time sammen med deg. "
         SendText(ProcessHotstringWithPlate(template))
     }
 }
