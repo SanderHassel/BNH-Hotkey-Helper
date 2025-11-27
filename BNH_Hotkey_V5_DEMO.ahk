@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.3 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.4 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-11-14
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.3"  ; Oppdatert fra "6.1.2"
+global SCRIPT_VERSION := "6.1.4"  ; Oppdatert fra "6.1.3"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -268,7 +268,7 @@ CheckForUpdates() {
 ^+A:: {
     try {
         TrackUsage("Nøkkelautomat tekst")
-        SendText("(eller bruk nøkkelautomat utenfor åpningstid)")
+        SendText("Nøkkelautomat utenfor åpningstid")
     } catch as e {
         ShowError("Nøkkelautomat tekst", e)
     }
@@ -277,7 +277,7 @@ CheckForUpdates() {
 ^+N:: {
     try {
         TrackUsage("Nøkkelautomat tekst")
-        SendText("(eller bruk nøkkelautomat utenfor åpningstid)")
+        SendText("Nøkkelautomat utenfor åpningstid")
     } catch as e {
         ShowError("Nøkkelautomat tekst", e)
     }
