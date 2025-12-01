@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.4 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.5 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-11-14
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.4"  ; Oppdatert fra "6.1.3"
+global SCRIPT_VERSION := "6.1.5"  ; Oppdatert fra "6.1.4"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -840,7 +840,7 @@ ProcessHotstringWithPlate(templateText) {
 {
     try {
         TrackUsage("Hotstring: *forkontroll")
-        SendText("Vi ønsker å utføre en forkontroll av lyden først. På denne måten kan vi utelukke eventuelle feil, bestille nødvendige deler og estimere kostnad for reparasjon. Du blir da med mekaniker på kjøretur for å fremvise og forklare lyden. Dette tar ca en halvtime og koster 490,- dersom dette ikke dekkes av garanti. Passer det for deg den DATO kl. XX:XX? Du kan svare på denne e-posten..")
+        SendText("Vi ønsker å utføre en forkontroll av lyden først. På denne måten kan vi utelukke eventuelle feil, bestille nødvendige deler og estimere kostnad for reparasjon. Du blir da med mekaniker på kjøretur for å fremvise og forklare lyden. Dette tar ca en halvtime og koster 690,- dersom dette ikke dekkes av garanti. Passer det for deg den DATO kl. XX:XX? Du kan svare på denne e-posten..")
     }
 }
 
