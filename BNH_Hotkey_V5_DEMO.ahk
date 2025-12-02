@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.5 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.6 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-11-14
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.5"  ; Oppdatert fra "6.1.4"
+global SCRIPT_VERSION := "6.1.6"  ; Oppdatert fra "6.1.5"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -857,6 +857,40 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *ikkevent")
         SendText("OBS: Vi kan dessverre ikke tilby ventetime på denne type jobb. Avtalen er endret til levering kl. 08 og hente kl. 16. Du kan også levere/hente utenfor åpningstid i nøkkelautomat. Du blir kontaktet når bilen er klar. Vi tilbyr leiebil fra 698,- pr døgn, må avtales minimum 48 timer før verkstedtimen.")
+    }
+}
+
+:*:*brems::
+{
+    try {
+        TrackUsage("Hotstring: *brems")
+        
+        ; Send normal tekst
+        Send("^b")  ;
+        SendText("Pris inkl. bremseservice: ")
+        Send("^b")  ;
+        SendText("?,- inkl. mva. `r`n")
+        Send("^b")  ;
+        SendText("Pris uten bremseservice: ")
+        Send("^b")  ;
+        SendText("?,- inkl. mva.`r`n`r`n")
+        SendText("Vi har lagt til bremseservice i forbindelse med timen din. Gi oss beskjed dersom du ikke ønsker dette. `r`n`r`n")
+        
+        ; Send FET TEKST
+        Send("^b")  ;
+        SendText("Hva innebærer bremseservice?")
+        Send("^b")  ;
+        SendText("`r`n")
+        
+        SendText("Vi demonterer bremseklosser foran og bak, rengjør og pusser anleggsflater, og smører alle nødvendige komponenter for å sikre optimal funksjon. `r`n`r`n")
+        
+        ; Send FET TEKST igjen
+        Send("^b")
+        SendText("Hvorfor anbefaler vi bremseservice?")
+        Send("^b")
+        SendText("`r`n")
+        
+        SendText("På elbiler brukes bremsene mindre fordi mye av nedbremsiken skjer via regenerering. Dette kan føre til at bremsekomponenter setter seg fast, bremseskiver ruster og bremsevirkningen svekkes.  Derfor anbefaler vi å utføre bremseservice årlig for trygg og effektiv bremsing.")
     }
 }
 
