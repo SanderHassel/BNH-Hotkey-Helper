@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.6 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.7 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2025-11-14
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.6"  ; Oppdatert fra "6.1.5"
+global SCRIPT_VERSION := "6.1.7"  ; Oppdatert fra "6.1.6"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -268,7 +268,7 @@ CheckForUpdates() {
 ^+A:: {
     try {
         TrackUsage("Nøkkelautomat tekst")
-        SendText("Nøkkelautomat utenfor åpningstid")
+        SendText("(eller nøkkelautomat utenfor åpningstid)")
     } catch as e {
         ShowError("Nøkkelautomat tekst", e)
     }
@@ -277,7 +277,7 @@ CheckForUpdates() {
 ^+N:: {
     try {
         TrackUsage("Nøkkelautomat tekst")
-        SendText("Nøkkelautomat utenfor åpningstid")
+        SendText("(eller nøkkelautomat utenfor åpningstid)")
     } catch as e {
         ShowError("Nøkkelautomat tekst", e)
     }
@@ -298,6 +298,15 @@ CheckForUpdates() {
         SendText("Venter på bilen")
     } catch as e {
         ShowError("Venter på bilen", e)
+    }
+}
+
+^+O:: {
+    try {
+        TrackUsage("Oppsøkende")
+        SendText("Oppsøkende")
+    } catch as e {
+        ShowError("Oppsøkende", e)
     }
 }
 
@@ -814,7 +823,7 @@ ProcessHotstringWithPlate(templateText) {
 {
     try {
         TrackUsage("Hotstring: *opeu")
-        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time raskt og enkelt på nett: Widget Hilsen Birger N. Haug / 40010400 SMS kan ikke besvares."
+        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
         SendText(ProcessHotstringWithPlate(template))
     }
 }
@@ -823,7 +832,7 @@ ProcessHotstringWithPlate(templateText) {
 {
     try {
         TrackUsage("Hotstring: *opsmsg")
-        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Jeg vil minne om at bilen din er 5 år 09.03.2025 og det er anbefalt å utføre service før dette. Ring oss gjerne tilbake på 40010400 slik at vi kan sette opp en time sammen med deg. "
+        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Jeg vil minne om at bilen din er 5 år {DD.MM.ÅÅ} og det er anbefalt å utføre service før dette. Ring oss gjerne tilbake på 40010400 slik at vi kan sette opp en time sammen med deg. "
         SendText(ProcessHotstringWithPlate(template))
     }
 }
