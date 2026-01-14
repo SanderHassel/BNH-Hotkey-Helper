@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.8 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.1.9 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.8"  ; Oppdatert fra "6.1.7"
+global SCRIPT_VERSION := "6.1.9"  ; Oppdatert fra "6.1.8"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -866,6 +866,14 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *ikkevent")
         SendText("OBS: Vi kan dessverre ikke tilby ventetime på denne type jobb. Avtalen er endret til levering kl. 08 og hente kl. 16. Du kan også levere/hente utenfor åpningstid i nøkkelautomat. Du blir kontaktet når bilen er klar. Vi tilbyr leiebil fra 698,- pr døgn, må avtales minimum 48 timer før verkstedtimen.")
+    }
+}
+
+:*:*feilsøk::
+{
+    try {
+        TrackUsage("Hotstring: *feilsøk")
+        SendText("Feilsøk/kontroll- 1990,- for inntil en time. Dersom det er behov for mer tid enn dette vil du bli kontaktet av verkstedet for godkjennelse av videre feilsøk på dette og mer kostander kan tilkomme da vi ikke vet om det holder med en time i dette tilfelle.")
     }
 }
 
@@ -1866,6 +1874,7 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
+
 
 
 
