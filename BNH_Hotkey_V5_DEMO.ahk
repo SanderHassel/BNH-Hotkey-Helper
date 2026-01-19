@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.1.9 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.0 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.1.9"  ; Oppdatert fra "6.1.8"
+global SCRIPT_VERSION := "6.2.0"  ; Oppdatert fra "6.1.9"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -781,7 +781,7 @@ ProcessHotstringWithPlate(templateText) {
 {
     try {
         TrackUsage("Hotstring: *inntil")
-        SendText("*Inntil 1 time feilsøk.")
+        SendText("*Inntil en time feilsøk.")
     }
 }
 
@@ -1874,6 +1874,7 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
+
 
 
 
