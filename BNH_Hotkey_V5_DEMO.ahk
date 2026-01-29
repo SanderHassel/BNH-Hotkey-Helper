@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.0 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.1 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.0"  ; Oppdatert fra "6.1.9"
+global SCRIPT_VERSION := "6.2.1"  ; Oppdatert fra "6.2.0"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -43,6 +43,13 @@ global COLORS := {
 global DEKK_PATHS := {
     Continental: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Continental høst 2025.xlsx",
     Nokian: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Nokian høst 2025.xlsx"
+}
+
+; Autofacet Quick SMS koordinater (konfigurerbar via setup)
+global QUICKSMS_COORDS := {
+    Point1: {X: 0, Y: 0},  ; Første klikk etter musposisjon
+    Point2: {X: 0, Y: 0},  ; Andre klikk
+    Point3: {X: 0, Y: 0}   ; Tredje klikk
 }
 
 ; ============================================================================
@@ -146,6 +153,26 @@ CheckForUpdates() {
     } catch as e {
         TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
     }
+}
+
+; ============================================================================
+; DOUBLE-TAP E - AUTOFACET QUICK SMS
+; ============================================================================
+
+$e:: {
+    static lastETime := 0
+    currentTime := A_TickCount
+    
+    ; Hvis siste tast var E og det er innenfor 300ms = dobbelt-trykk
+    if (A_PriorKey = "e" && (currentTime - lastETime) < 300) {
+        lastETime := 0
+        ExecuteAutofacetQuickSMS()
+        return
+    }
+    
+    ; Ellers: send E og lagre tidspunkt
+    lastETime := currentTime
+    SendText("e")
 }
 
 ; ============================================================================
@@ -406,7 +433,8 @@ ShowAutofacetSetupHub() {
         {name: "KOMMUNIKASJON", shortcut: "Ctrl+Shift+3", icon: "💬", color: COLORS.ORANGE, desc: "Send melding til kunde", x: 30, y: 430},
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
-        {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580}
+        {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
+        {name: "QUICKSMS", shortcut: "Dobbel-klikk E", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730}
     ]
     
     for module in modules {
@@ -473,20 +501,44 @@ StartModuleSetup(moduleName, shortcut) {
             setupText .= "1. Trykk OK`n"
             setupText .= "2. Hold musen over et TOMT område (5 sek)`n"
             setupText .= "3. Posisjonen lagres automatisk"
-        } else {
-            setupText := "🎯 Konfigurer " moduleName "-knapp:`n`n"
-            setupText .= "1. Trykk OK for å fortsette`n"
-            setupText .= "2. Du har 5 sekunder til å holde musen over knappen`n"
-            setupText .= "3. Musposisjonen lagres automatisk`n`n"
-            setupText .= "⚠️ VIKTIG: Hold musen HELT STILLE over knappen!"
+            
+            result := MsgBox(setupText, "Setup: " moduleName, "OKCancel Icon!")
+            if (result = "Cancel")
+                return
+            
+            Loop 5 {
+                remaining := 6 - A_Index
+                ToolTip("Lagrer posisjon om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
+                Sleep(1000)
+            }
+            ToolTip()
+            
+            MouseGetPos(&mx, &my)
+            configFile := A_ScriptDir "\autofacet_config.ini"
+            IniWrite(mx, configFile, "NULLPUNKT", "X")
+            IniWrite(my, configFile, "NULLPUNKT", "Y")
+            
+            MsgBox("✅ Nullpunkt lagret!`n`n🎯 X: " mx "`n🎯 Y: " my "`n`n💡 Dette punktet klikkes etter hver handling for å fjerne blå markering.", "Suksess", "Iconi T4")
+            return
         }
         
-        result := MsgBox(setupText, "Setup: " moduleName, "OKCancel Icon!")
+        ; SPESIELL INSTRUKSJON FOR QUICKSMS (3 punkter)
+        if (moduleName = "QUICKSMS") {
+            SetupQuickSMSPoints()
+            return
+        }
         
+        ; STANDARD OPPSETT (1 punkt)
+        setupText := "🎯 Konfigurer " moduleName "-knapp:`n`n"
+        setupText .= "1. Trykk OK for å fortsette`n"
+        setupText .= "2. Du har 5 sekunder til å holde musen over knappen`n"
+        setupText .= "3. Musposisjonen lagres automatisk`n`n"
+        setupText .= "⚠️ VIKTIG: Hold musen HELT STILLE over knappen!"
+        
+        result := MsgBox(setupText, "Setup: " moduleName, "OKCancel Icon!")
         if (result = "Cancel")
             return
         
-        ; Nedtelling (5 sekunder)
         Loop 5 {
             remaining := 6 - A_Index
             ToolTip("Lagrer posisjon om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
@@ -494,25 +546,57 @@ StartModuleSetup(moduleName, shortcut) {
         }
         ToolTip()
         
-        ; Hent musposisjon
         MouseGetPos(&mx, &my)
-        
-        ; Lagre koordinater
         configFile := A_ScriptDir "\autofacet_config.ini"
-        configSection := moduleName
+        IniWrite(mx, configFile, moduleName, "X")
+        IniWrite(my, configFile, moduleName, "Y")
         
-        IniWrite(mx, configFile, configSection, "X")
-        IniWrite(my, configFile, configSection, "Y")
-        
-        ; BEKREFTELSE MED EMOJI
-        if (moduleName = "NULLPUNKT") {
-            MsgBox("✅ Nullpunkt lagret!`n`n🎯 X: " mx "`n🎯 Y: " my "`n`n💡 Dette punktet klikkes etter hver handling for å fjerne blå markering.", "Suksess", "Iconi T4")
-        } else {
-            MsgBox("✅ Posisjon lagret!`n`nX: " mx "`nY: " my "`n`nHurtigtast: " shortcut, "Suksess", "Iconi T3")
-        }
+        MsgBox("✅ Posisjon lagret!`n`nX: " mx "`nY: " my "`n`nHurtigtast: " shortcut, "Suksess", "Iconi T3")
         
     } catch as e {
         ShowError("StartModuleSetup", e)
+    }
+}
+
+SetupQuickSMSPoints() {
+    try {
+        setupText := "📱 Konfigurer Quick SMS (3 punkter):`n`n"
+        setupText .= "Du må konfigurere 3 klikk-punkter:`n`n"
+        setupText .= "PUNKT 1: Første klikk (etter 500ms)`n"
+        setupText .= "PUNKT 2: Andre klikk (etter 300ms)`n"
+        setupText .= "PUNKT 3: Tredje klikk (før meny)`n`n"
+        setupText .= "Trykk OK for å starte"
+        
+        result := MsgBox(setupText, "Setup: Quick SMS", "OKCancel Icon!")
+        if (result = "Cancel")
+            return
+        
+        configFile := A_ScriptDir "\autofacet_config.ini"
+        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3"]
+        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3"]
+        
+        Loop 3 {
+            idx := A_Index
+            MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
+            
+            Loop 5 {
+                remaining := 6 - A_Index
+                ToolTip("Lagrer " points[idx] " om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
+                Sleep(1000)
+            }
+            ToolTip()
+            
+            MouseGetPos(&mx, &my)
+            IniWrite(mx, configFile, sections[idx], "X")
+            IniWrite(my, configFile, sections[idx], "Y")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+        }
+        
+        MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nDobbel-klikk E for å bruke.", "Ferdig", "Iconi T4")
+        
+    } catch as e {
+        ShowError("Setup Quick SMS", e)
     }
 }
 
@@ -1850,6 +1934,149 @@ Gdip_DisposeImage(pBitmap) {
 }
 
 ; ============================================================================
+; AUTOFACET QUICK SMS - DOUBLE-TAP E
+; ============================================================================
+
+ExecuteAutofacetQuickSMS() {
+    try {
+        TrackUsage("Autofacet Quick SMS")
+        
+        if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
+            ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
+            return
+        }
+        
+        ; Les konfigurerte koordinater
+        configFile := A_ScriptDir "\autofacet_config.ini"
+        
+        if !FileExist(configFile) {
+            ShowQuietNotification("❌ Konfigurer Quick SMS først. Trykk Ctrl+Shift+P")
+            return
+        }
+        
+        p1x := IniRead(configFile, "QUICKSMS_POINT1", "X", "")
+        p1y := IniRead(configFile, "QUICKSMS_POINT1", "Y", "")
+        p2x := IniRead(configFile, "QUICKSMS_POINT2", "X", "")
+        p2y := IniRead(configFile, "QUICKSMS_POINT2", "Y", "")
+        p3x := IniRead(configFile, "QUICKSMS_POINT3", "X", "")
+        p3y := IniRead(configFile, "QUICKSMS_POINT3", "Y", "")
+        
+        if (p1x = "" || p2x = "" || p3x = "") {
+            ShowQuietNotification("❌ Quick SMS ikke fullstendig konfigurert")
+            return
+        }
+        
+        ; STEG 1: Klikk på musposisjon
+        Click("Left")
+        
+        ; STEG 2: Klikk på punkt 1 (etter 1500ms)
+        Sleep(1500)
+        MouseMove(Integer(p1x), Integer(p1y), 0)
+        Sleep(15)
+        Click("Left")
+        
+        ; STEG 3: Klikk på punkt 2 (etter 500ms)
+        Sleep(500)
+        MouseMove(Integer(p2x), Integer(p2y), 0)
+        Sleep(15)
+        Click("Left")
+        
+        ; STEG 4: Pil ned (etter 100ms)
+        Sleep(100)
+        Send("{Down}")
+        
+        ; STEG 5: Enter (etter 100ms)
+        Sleep(100)
+        Send("{Enter}")
+        
+        ; STEG 6: Klikk på punkt 3 (etter 100ms)
+        Sleep(100)
+        MouseMove(Integer(p3x), Integer(p3y), 0)
+        Sleep(15)
+        Click("Left")
+        
+        ; STEG 7: Vis SMS-meny (etter kort pause)
+        Sleep(200)
+        ShowQuickSMSMenu()
+        
+    } catch as e {
+        ShowError("Autofacet Quick SMS", e)
+    }
+}
+
+ShowQuickSMSMenu() {
+    try {
+        smsGui := Gui("+AlwaysOnTop", "📱 Velg SMS-mal")
+        smsGui.BackColor := COLORS.BG_DARK
+        smsGui.MarginX := 20
+        smsGui.MarginY := 20
+        
+        titleText := smsGui.Add("Text", "w300 h35 Center c" COLORS.TEXT_WHITE, "📱 Velg SMS-mal")
+        titleText.SetFont("s14 Bold", "Segoe UI")
+        
+        btn1 := CreateStyledButton(smsGui, "w300 h50 y+15", "Service -Avtale", COLORS.BLUE, 11)
+        btn1.OnEvent("Click", (*) => SendSMSTemplate("opsms-", smsGui))
+        
+        btn2 := CreateStyledButton(smsGui, "w300 h50 y+10", "Service +Avtale", COLORS.GREEN, 11)
+        btn2.OnEvent("Click", (*) => SendSMSTemplate("opsms+", smsGui))
+        
+        btn3 := CreateStyledButton(smsGui, "w300 h50 y+10", "Service Garanti", COLORS.ORANGE, 11)
+        btn3.OnEvent("Click", (*) => SendSMSTemplate("opsmsg", smsGui))
+        
+        btn4 := CreateStyledButton(smsGui, "w300 h50 y+10", "EU-kontroll", COLORS.PURPLE, 11)
+        btn4.OnEvent("Click", (*) => SendSMSTemplate("opeu", smsGui))
+        
+        cancelBtn := CreateStyledButton(smsGui, "w300 h35 y+15", "Avbryt", COLORS.RED, 9)
+        cancelBtn.OnEvent("Click", (*) => smsGui.Destroy())
+        
+        smsGui.OnEvent("Close", (*) => smsGui.Destroy())
+        smsGui.OnEvent("Escape", (*) => smsGui.Destroy())
+        smsGui.Show("w340 h380")
+        
+    } catch as e {
+        ShowError("Quick SMS Menu", e)
+    }
+}
+
+SendSMSTemplate(templateType, gui) {
+    try {
+        gui.Destroy()
+        Sleep(100)
+        
+        ; Kall hotstring-funksjonen direkte
+        switch templateType {
+            case "opsms-":
+                TrackUsage("Hotstring: *opsms-")
+                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Bestill time raskt og enkelt på nett: https://service.bnh.no/ Hilsen Birger N. Haug / 40010400."
+                SendText(ProcessHotstringWithPlate(template))
+                
+            case "opsms+":
+                TrackUsage("Hotstring: *opsms+")
+                template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+                SendText(ProcessHotstringWithPlate(template))
+                
+            case "opsmsg":
+                TrackUsage("Hotstring: *opsmsg")
+                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Jeg vil minne om at bilen din er 5 år {DD.MM.ÅÅ} og det er anbefalt å utføre service før dette. Ring oss gjerne tilbake på 40010400 slik at vi kan sette opp en time sammen med deg. "
+                SendText(ProcessHotstringWithPlate(template))
+                
+            case "opeu":
+                TrackUsage("Hotstring: *opeu")
+                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+                SendText(ProcessHotstringWithPlate(template))
+                
+            default:
+                return
+        }
+        
+        TrackUsage("Quick SMS: " templateType)
+        
+    } catch as e {
+        ShowError("Send SMS Template", e)
+    }
+}
+
+; ============================================================================
 ; TRAY MENU
 ; ============================================================================
 
@@ -1874,9 +2101,3 @@ A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
-
-
-
-
-
-
