@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.1 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.2 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.1"  ; Oppdatert fra "6.2.0"
+global SCRIPT_VERSION := "6.2.2"  ; Oppdatert fra "6.2.1"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -442,15 +442,15 @@ ShowAutofacetSetupHub() {
     }
     
     ; Footer med status
-    statusText := setupGui.Add("Text", "x30 y730 w640 h25 Center c" COLORS.TEXT_GRAY, "✅ Konfigurer NULLPUNKT først, deretter de andre modulene")
+    statusText := setupGui.Add("Text", "x30 y880 w640 h25 Center c" COLORS.TEXT_GRAY, "✅ Konfigurer NULLPUNKT først, deretter de andre modulene")
     statusText.SetFont("s9 Italic", "Segoe UI")
-    
-    closeBtn := CreateStyledButton(setupGui, "x240 y770 w220 h45", "✅ Lukk", COLORS.BLUE, 12)
+
+    closeBtn := CreateStyledButton(setupGui, "x240 y920 w220 h45", "✅ Lukk", COLORS.BLUE, 12)
     closeBtn.OnEvent("Click", (*) => setupGui.Destroy())
     
     setupGui.OnEvent("Close", (*) => setupGui.Destroy())
     setupGui.OnEvent("Escape", (*) => setupGui.Destroy())
-    setupGui.Show("w700 h840")
+    setupGui.Show("w700 h990")
 }
 
 ; Lag visuelt kort for hver modul
