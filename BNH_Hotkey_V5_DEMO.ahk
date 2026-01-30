@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.3 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.4 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.3"  ; Oppdatert fra "6.2.2"
+global SCRIPT_VERSION := "6.2.4"  ; Oppdatert fra "6.2.3"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -156,34 +156,33 @@ CheckForUpdates() {
 }
 
 ; ============================================================================
-; DOUBLE-TAP E - AUTOFACET QUICK SMS
+; DOUBLE-TAP SHIFT - AUTOFACET QUICK SMS
 ; ============================================================================
 
-~e:: {  ; ✅ Bruker ~ prefix for å la "e" passere gjennom
-    static lastETime := 0
-    static eCount := 0
+~Shift:: {  ; ✅ Dobbel-klikk Shift i stedet for E
+    static lastShiftTime := 0
+    static shiftCount := 0
     currentTime := A_TickCount
     
-    ; Reset hvis mer enn 300ms siden siste E
-    if (currentTime - lastETime > 300) {
-        eCount := 1
-        lastETime := currentTime
+    ; Reset hvis mer enn 300ms siden siste Shift
+    if (currentTime - lastShiftTime > 150) {
+        shiftCount := 1
+        lastShiftTime := currentTime
         return
     }
     
     ; Dobbeltklikk detektert
-    if (eCount = 1 && (currentTime - lastETime) <= 300) {
-        eCount := 0
-        lastETime := 0
+    if (shiftCount = 1 && (currentTime - lastShiftTime) <= 150) {
+        shiftCount := 0
+        lastShiftTime := 0
         
-        ; Fjern de to "ee" som ble skrevet
-        Send("{Backspace 2}")
+        ; Start Quick SMS direkte (ingen backspace nødvendig)
         ExecuteAutofacetQuickSMS()
         return
     }
     
-    lastETime := currentTime
-    eCount := 1
+    lastShiftTime := currentTime
+    shiftCount := 1
 }
 
 ; ============================================================================
@@ -445,7 +444,7 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-klikk E", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730}
+        {name: "QUICKSMS", shortcut: "Dobbel-klikk Shift", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730}
     ]
     
     for module in modules {
