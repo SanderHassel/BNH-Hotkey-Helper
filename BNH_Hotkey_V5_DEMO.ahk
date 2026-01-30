@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.2 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.2"  ; Oppdatert fra "6.2.1"
+global SCRIPT_VERSION := "6.2.3"  ; Oppdatert fra "6.2.2"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -159,20 +159,31 @@ CheckForUpdates() {
 ; DOUBLE-TAP E - AUTOFACET QUICK SMS
 ; ============================================================================
 
-$e:: {
+~e:: {  ; ✅ Bruker ~ prefix for å la "e" passere gjennom
     static lastETime := 0
+    static eCount := 0
     currentTime := A_TickCount
     
-    ; Hvis siste tast var E og det er innenfor 300ms = dobbelt-trykk
-    if (A_PriorKey = "e" && (currentTime - lastETime) < 300) {
+    ; Reset hvis mer enn 300ms siden siste E
+    if (currentTime - lastETime > 300) {
+        eCount := 1
+        lastETime := currentTime
+        return
+    }
+    
+    ; Dobbeltklikk detektert
+    if (eCount = 1 && (currentTime - lastETime) <= 300) {
+        eCount := 0
         lastETime := 0
+        
+        ; Fjern de to "ee" som ble skrevet
+        Send("{Backspace 2}")
         ExecuteAutofacetQuickSMS()
         return
     }
     
-    ; Ellers: send E og lagre tidspunkt
     lastETime := currentTime
-    SendText("e")
+    eCount := 1
 }
 
 ; ============================================================================
