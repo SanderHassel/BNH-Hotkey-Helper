@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.4 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.5 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.4"  ; Oppdatert fra "6.2.3"
+global SCRIPT_VERSION := "6.2.5"  ; Oppdatert fra "6.2.4"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -156,27 +156,27 @@ CheckForUpdates() {
 }
 
 ; ============================================================================
-; DOUBLE-TAP SHIFT - AUTOFACET QUICK SMS
+; DOUBLE-TAP SHIFT - AUTOFACET QUICK SMS (KUN PRESS-OG-SLIPP)
 ; ============================================================================
 
-~Shift:: {  ; ✅ Dobbel-klikk Shift i stedet for E
+~Shift Up:: {  ;
     static lastShiftTime := 0
     static shiftCount := 0
     currentTime := A_TickCount
     
-    ; Reset hvis mer enn 300ms siden siste Shift
-    if (currentTime - lastShiftTime > 150) {
+    ; Reset hvis mer enn 300ms siden siste Shift-slipp
+    if (currentTime - lastShiftTime > 300) {
         shiftCount := 1
         lastShiftTime := currentTime
         return
     }
     
-    ; Dobbeltklikk detektert
-    if (shiftCount = 1 && (currentTime - lastShiftTime) <= 150) {
+    ; Dobbeltklikk detektert (to raske Shift-slipp)
+    if (shiftCount = 1 && (currentTime - lastShiftTime) <= 300) {
         shiftCount := 0
         lastShiftTime := 0
         
-        ; Start Quick SMS direkte (ingen backspace nødvendig)
+        ; Start Quick SMS direkte
         ExecuteAutofacetQuickSMS()
         return
     }
