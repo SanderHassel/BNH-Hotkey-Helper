@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.5 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.6 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-01-09
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.5"  ; Oppdatert fra "6.2.4"
+global SCRIPT_VERSION := "6.2.6"  ; Oppdatert fra "6.2.5"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -156,33 +156,33 @@ CheckForUpdates() {
 }
 
 ; ============================================================================
-; DOUBLE-TAP SHIFT - AUTOFACET QUICK SMS (KUN PRESS-OG-SLIPP)
+; DOUBLE-TAP CONTROL - AUTOFACET QUICK SMS (KUN PRESS-OG-SLIPP)
 ; ============================================================================
 
-~Shift Up:: {  ;
-    static lastShiftTime := 0
-    static shiftCount := 0
+~Control Up:: {  ; ✅ Lytter kun til når Control SLIPPES (ikke holdes inne)
+    static lastCtrlTime := 0
+    static ctrlCount := 0
     currentTime := A_TickCount
     
-    ; Reset hvis mer enn 300ms siden siste Shift-slipp
-    if (currentTime - lastShiftTime > 300) {
-        shiftCount := 1
-        lastShiftTime := currentTime
+    ; Reset hvis mer enn 300ms siden siste Control-slipp
+    if (currentTime - lastCtrlTime > 300) {
+        ctrlCount := 1
+        lastCtrlTime := currentTime
         return
     }
     
-    ; Dobbeltklikk detektert (to raske Shift-slipp)
-    if (shiftCount = 1 && (currentTime - lastShiftTime) <= 300) {
-        shiftCount := 0
-        lastShiftTime := 0
+    ; Dobbeltklikk detektert (to raske Control-slipp)
+    if (ctrlCount = 1 && (currentTime - lastCtrlTime) <= 300) {
+        ctrlCount := 0
+        lastCtrlTime := 0
         
         ; Start Quick SMS direkte
         ExecuteAutofacetQuickSMS()
         return
     }
     
-    lastShiftTime := currentTime
-    shiftCount := 1
+    lastCtrlTime := currentTime
+    ctrlCount := 1
 }
 
 ; ============================================================================
@@ -444,7 +444,7 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-klikk Shift", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730}
+        {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730}
     ]
     
     for module in modules {
@@ -603,7 +603,7 @@ SetupQuickSMSPoints() {
             MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
         }
         
-        MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nDobbel-klikk E for å bruke.", "Ferdig", "Iconi T4")
+        MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nDobbel-klikk Ctrl for å bruke.", "Ferdig", "Iconi T4")
         
     } catch as e {
         ShowError("Setup Quick SMS", e)
