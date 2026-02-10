@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.6 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.7 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2026-01-09
+; Sist oppdatert: 2026-02-10
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.6"  ; Oppdatert fra "6.2.5"
+global SCRIPT_VERSION := "6.2.7"  ; Oppdatert fra "6.2.6"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1002,6 +1002,19 @@ ProcessHotstringWithPlate(templateText) {
         SendText("`r`n")
         
         SendText("På elbiler brukes bremsene mindre fordi mye av nedbremsiken skjer via regenerering. Dette kan føre til at bremsekomponenter setter seg fast, bremseskiver ruster og bremsevirkningen svekkes.  Derfor anbefaler vi å utføre bremseservice årlig for trygg og effektiv bremsing.")
+    }
+}
+
+:*:*tilbud::
+{
+    try {
+        TrackUsage("Hotstring: *tilbud")
+        
+        ; Send normal tekst
+        SendText("Hei [Kundenavn], `r`n`r`n")
+        SendText("Jeg ønsker å følge opp tilbudet vi sendte deg den [dato tilbudet ble sendt], vedrørende [kort beskrivelse av tjenesten eller produktet]. `r`n")
+        SendText("Tilbudet er gyldig i 30 dager, og jeg ville bare høre om du har hatt anledning til å se på det, eller om det er noe du lurer på. Vi står klare til å bistå med eventuelle spørsmål, tilpasninger eller videre planlegging. `r`n`r`n")
+        SendText("Gi gjerne en lyd om du ønsker å gå videre, eller om du trenger mer informasjon før du tar en beslutning.")
     }
 }
 
