@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.7 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.8 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-02-10
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.7"  ; Oppdatert fra "6.2.6"
+global SCRIPT_VERSION := "6.2.8"  ; Oppdatert fra "6.2.7"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1015,6 +1015,39 @@ ProcessHotstringWithPlate(templateText) {
         SendText("Jeg ønsker å følge opp tilbudet vi sendte deg den [dato tilbudet ble sendt], vedrørende [kort beskrivelse av tjenesten eller produktet]. `r`n")
         SendText("Tilbudet er gyldig i 30 dager, og jeg ville bare høre om du har hatt anledning til å se på det, eller om det er noe du lurer på. Vi står klare til å bistå med eventuelle spørsmål, tilpasninger eller videre planlegging. `r`n`r`n")
         SendText("Gi gjerne en lyd om du ønsker å gå videre, eller om du trenger mer informasjon før du tar en beslutning.")
+    }
+}
+
+:*:*batteri::
+{
+    try {
+        TrackUsage("Hotstring: *batteri")
+        
+        ; Send normal tekst
+        SendText("Hvor mange ganger har du opplevd at batteriet har hatt et plutselig og dramatisk fall i batterikapasitet ved kjøring? `r`n")
+        Send("^b")  ;
+        SendText("SVAR: ")
+        Send("^b `r`n")  ;
+        SendText("Hvilken belastning var bilen utsatt for da det skjedde? Kjørte du i oppoverbakke? `r`n")
+        Send("^b")  ;
+        SendText("SVAR: ")
+        Send("^b `r`n")  ;
+        SendText("Hvor mange personer var i bilen? `r`n")
+        Send("^b")  ;
+        SendText("SVAR: ")
+        Send("^b `r`n")  ;
+        SendText("Hvilken utetemperatur var det på tidspunktet? `r`n")
+        Send("^b")  ;
+        SendText("SVAR: ")
+        Send("^b `r`n")  ;
+        SendText("Hvor lang tid varte det før batteriet viste normal status igjen? `r`n")
+        Send("^b")  ;
+        SendText("SVAR: ")
+        Send("^b `r`n")  ;
+        SendText("Er service utført iht til serviceplan til bilprodusent? Kan dette dokumenteres*? (*hvis det er utført et annet sted enn Birger N. Haug) `r`n")
+        Send("^b")  ;
+        SendText("SVAR: ")
+        Send("^b")  ;
     }
 }
 
