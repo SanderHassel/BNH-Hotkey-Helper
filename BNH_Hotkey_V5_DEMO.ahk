@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.8 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.2.9 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-02-10
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.8"  ; Oppdatert fra "6.2.7"
+global SCRIPT_VERSION := "6.2.9"  ; Oppdatert fra "6.2.8"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -153,6 +153,47 @@ CheckForUpdates() {
     } catch as e {
         TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
     }
+}
+
+; ============================================================================
+; SHIFT + DOUBLE-TAP T - AUTOFACET QUICK TILBUD (7 PUNKTER)
+; ============================================================================
+
+~t Up::
+~+t Up:: {  ; ✅ Shift+T kombinasjon
+    static lastTTime := 0
+    static tCount := 0
+    currentTime := A_TickCount
+    
+    ; Kun aktiver hvis Shift holdes inne
+    if !GetKeyState("Shift", "P") {
+        lastTTime := 0
+        tCount := 0
+        return
+    }
+    
+    ; Reset hvis mer enn 300ms siden siste T-slipp
+    if (currentTime - lastTTime > 300) {
+        tCount := 1
+        lastTTime := currentTime
+        return
+    }
+    
+    ; Dobbeltklikk detektert (mens Shift holdes)
+    if (tCount = 1 && (currentTime - lastTTime) <= 300) {
+        tCount := 0
+        lastTTime := 0
+        
+        ; Fjern de to "TT" som ble skrevet
+        Send("{Backspace 2}")
+        
+        ; Start Quick Tilbud direkte
+        ExecuteAutofacetQuickTilbud()
+        return
+    }
+    
+    lastTTime := currentTime
+    tCount := 1
 }
 
 ; ============================================================================
@@ -444,7 +485,8 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730}
+        {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730},
+        {name: "QUICKTILBUD", shortcut: "Shift + Dobbel-T", icon: "💼", color: "0xE67E22", desc: "Quick Tilbud-sekvens (7 punkter)", x: 350, y: 730}
     ]
     
     for module in modules {
@@ -538,6 +580,12 @@ StartModuleSetup(moduleName, shortcut) {
             return
         }
         
+        ; SPESIELL INSTRUKSJON FOR QUICKTILBUD (8 punkter)
+        if (moduleName = "QUICKTILBUD") {
+            SetupQuickTilbudPoints()
+            return
+        }
+
         ; STANDARD OPPSETT (1 punkt)
         setupText := "🎯 Konfigurer " moduleName "-knapp:`n`n"
         setupText .= "1. Trykk OK for å fortsette`n"
@@ -607,6 +655,48 @@ SetupQuickSMSPoints() {
         
     } catch as e {
         ShowError("Setup Quick SMS", e)
+    }
+}
+
+SetupQuickTilbudPoints() {
+    try {
+        setupText := "💼 Konfigurer Quick Tilbud (7 punkter):`n`n"
+        setupText .= "Du må konfigurere 7 klikk-punkter for tilbudsprosessen.`n`n"
+        setupText .= "PUNKT 1: Første klikk (etter musposisjon)`n"
+        setupText .= "PUNKT 2-7: Videre klikk i sekvensen`n`n"
+        setupText .= "Trykk OK for å starte"
+        
+        result := MsgBox(setupText, "Setup: Quick Tilbud", "OKCancel Icon!")
+        if (result = "Cancel")
+            return
+        
+        configFile := A_ScriptDir "\autofacet_config.ini"
+        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4", "PUNKT 5", "PUNKT 6", "PUNKT 7"]
+        sections := ["QUICKTILBUD_POINT1", "QUICKTILBUD_POINT2", "QUICKTILBUD_POINT3", "QUICKTILBUD_POINT4", 
+                     "QUICKTILBUD_POINT5", "QUICKTILBUD_POINT6", "QUICKTILBUD_POINT7"]
+        
+        Loop 7 {
+            idx := A_Index
+            MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
+            
+            Loop 5 {
+                remaining := 6 - A_Index
+                ToolTip("Lagrer " points[idx] " om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
+                Sleep(1000)
+            }
+            ToolTip()
+            
+            MouseGetPos(&mx, &my)
+            IniWrite(mx, configFile, sections[idx], "X")
+            IniWrite(my, configFile, sections[idx], "Y")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+        }
+        
+        MsgBox("🎉 Quick Tilbud fullstendig konfigurert!`n`nHold Shift og dobbel-klikk T for å bruke.", "Ferdig", "Iconi T4")
+        
+    } catch as e {
+        ShowError("Setup Quick Tilbud", e)
     }
 }
 
@@ -968,6 +1058,14 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *feilsøk")
         SendText("Feilsøk/kontroll- 1990,- for inntil en time. Dersom det er behov for mer tid enn dette vil du bli kontaktet av verkstedet for godkjennelse av videre feilsøk på dette og mer kostander kan tilkomme da vi ikke vet om det holder med en time i dette tilfelle.")
+    }
+}
+
+:*:*takst::
+{
+    try {
+        TrackUsage("Hotstring: *takst")
+        SendText("Link til onlinebooking for takst av skade: https://automotive-damageinspection.cabgroup.net/bnh/#/booking/start")
     }
 }
 
@@ -1987,6 +2085,74 @@ GetCodecClsid(mimeType) {
 
 Gdip_DisposeImage(pBitmap) {
     return DllCall("gdiplus\GdipDisposeImage", "Ptr", pBitmap)
+}
+
+; ============================================================================
+; AUTOFACET QUICK TILBUD - SHIFT + DOUBLE-TAP T (7 PUNKTER)
+; ============================================================================
+
+ExecuteAutofacetQuickTilbud() {
+    try {
+        TrackUsage("Autofacet Quick Tilbud")
+        
+        if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
+            ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
+            return
+        }
+        
+        ; Les konfigurerte koordinater
+        configFile := A_ScriptDir "\autofacet_config.ini"
+        
+        if !FileExist(configFile) {
+            ShowQuietNotification("❌ Konfigurer Quick Tilbud først. Trykk Ctrl+Shift+P")
+            return
+        }
+        
+        ; Les alle 7 punkter
+        points := []
+        Loop 7 {
+            px := IniRead(configFile, "QUICKTILBUD_POINT" A_Index, "X", "")
+            py := IniRead(configFile, "QUICKTILBUD_POINT" A_Index, "Y", "")
+            
+            if (px = "" || py = "") {
+                ShowQuietNotification("❌ Quick Tilbud ikke fullstendig konfigurert (mangler punkt " A_Index ")")
+                return
+            }
+            
+            points.Push({x: Integer(px), y: Integer(py)})
+        }
+        
+        ; ⏱️ KONFIGURERBARE SLEEP-TIDER (i millisekunder) - JUSTER ETTER BEHOV
+        sleepTimes := [
+            500,  ; Sleep FØR punkt 1 (etter initial klikk)
+            300,   ; Sleep FØR punkt 2
+            300,   ; Sleep FØR punkt 3
+            1600,   ; Sleep FØR punkt 4
+            300,   ; Sleep FØR punkt 5
+            300,   ; Sleep FØR punkt 6
+            300    ; Sleep FØR punkt 7
+        ]
+        
+        ; STEG 1: Klikk på nåværende musposisjon (som Quick SMS)
+        Click("Left")
+        
+        ; STEG 2-8: Klikk på de 7 konfigurerte punktene
+        Loop 7 {
+            idx := A_Index
+            
+            ; Pause før neste klikk (bruk konfigurerbar tid)
+            Sleep(sleepTimes[idx])
+            
+            MouseMove(points[idx].x, points[idx].y, 0)
+            Sleep(15)
+            Click("Left")
+        }
+        
+        ShowQuietNotification("✅ Quick Tilbud fullført!")
+        
+    } catch as e {
+        ShowError("Autofacet Quick Tilbud", e)
+    }
 }
 
 ; ============================================================================
