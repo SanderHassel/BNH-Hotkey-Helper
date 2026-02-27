@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.2.9 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.3.0 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-02-10
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.2.9"  ; Oppdatert fra "6.2.8"
+global SCRIPT_VERSION := "6.3.0"  ; Oppdatert fra "6.2.9"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1115,7 +1115,7 @@ ProcessHotstringWithPlate(templateText) {
 {
     try {
         TrackUsage("Hotstring: *opsms+")
-        template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+        template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time hær: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
         SendText(ProcessHotstringWithPlate(template))
     }
 }
@@ -1124,7 +1124,7 @@ ProcessHotstringWithPlate(templateText) {
 {
     try {
         TrackUsage("Hotstring: *opeu")
-        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+        template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time hær: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
         SendText(ProcessHotstringWithPlate(template))
     }
 }
@@ -2521,7 +2521,7 @@ SendSMSTemplate(templateType, gui) {
                 
             case "opsms+":
                 TrackUsage("Hotstring: *opsms+")
-                template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+                template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time hær: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
                 SendText(ProcessHotstringWithPlate(template))
                 
             case "opsmsg":
@@ -2531,7 +2531,7 @@ SendSMSTemplate(templateType, gui) {
                 
             case "opeu":
                 TrackUsage("Hotstring: *opeu")
-                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time här: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
+                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time hær: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
                 SendText(ProcessHotstringWithPlate(template))
                 
             default:
