@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.3.2 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.3.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-04-03
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.3.2"  ; Oppdatert fra "6.3.1"
+global SCRIPT_VERSION := "6.3.3"  ; Oppdatert fra "6.3.2"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -520,7 +520,7 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens", x: 30, y: 730},
+        {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (4 punkter)", x: 30, y: 730},
         {name: "QUICKTILBUD", shortcut: "Shift + Dobbel-T", icon: "💼", color: "0xE67E22", desc: "Quick Tilbud-sekvens (7 punkter)", x: 350, y: 730},
         {name: "QUICKTILBUDY", shortcut: "Shift + Dobbel-Y (Loop)", icon: "🔁", color: "0x9C27B0", desc: "Quick Tilbud med loop (8 punkter)", x: 30, y: 880}
     ]
@@ -735,11 +735,12 @@ SetupQuickTilbudYPoints() {
 
 SetupQuickSMSPoints() {
     try {
-        setupText := "📱 Konfigurer Quick SMS (3 punkter):`n`n"
-        setupText .= "Du må konfigurere 3 klikk-punkter:`n`n"
-        setupText .= "PUNKT 1: Første klikk (etter 500ms)`n"
-        setupText .= "PUNKT 2: Andre klikk (etter 300ms)`n"
-        setupText .= "PUNKT 3: Tredje klikk (før meny)`n`n"
+        setupText := "📱 Konfigurer Quick SMS (4 punkter):`n`n"
+        setupText .= "Du må konfigurere 4 klikk-punkter:`n`n"
+        setupText .= "PUNKT 1: Første klikk`n"
+        setupText .= "PUNKT 2: Andre klikk`n"
+        setupText .= "PUNKT 3: Tredje klikk`n"
+        setupText .= "PUNKT 4: Fjerde klikk (før meny)`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Quick SMS", "OKCancel Icon!")
@@ -747,10 +748,10 @@ SetupQuickSMSPoints() {
             return
         
         configFile := A_ScriptDir "\autofacet_config.ini"
-        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3"]
-        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3"]
+        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4"]
+        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4"]
         
-        Loop 3 {
+        Loop 4 {
             idx := A_Index
             MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
             
@@ -1229,7 +1230,7 @@ ProcessHotstringWithPlate(templateText) {
         Send("^b")
         SendText("`r`n")
         
-        SendText("På elbiler brukes bremsene mindre fordi mye av nedbremsiken skjer via regenerering. Dette kan føre til at bremsekomponenter setter seg fast, bremseskiver ruster og bremsevirkningen svekkes.  Derfor anbefaler vi å utføre bremseservice årlig for trygg og effektiv bremsing.")
+        SendText("På elbiler brukes bremsene mindre fordi mye av nedbremsingen skjer via regenerering. Dette kan føre til at bremsekomponenter setter seg fast, bremseskiver ruster og bremsevirkningen svekkes.  Derfor anbefaler vi å utføre bremseservice årlig for trygg og effektiv bremsing.")
     }
 }
 
@@ -2370,8 +2371,10 @@ ExecuteAutofacetQuickSMS() {
         p2y := IniRead(configFile, "QUICKSMS_POINT2", "Y", "")
         p3x := IniRead(configFile, "QUICKSMS_POINT3", "X", "")
         p3y := IniRead(configFile, "QUICKSMS_POINT3", "Y", "")
+        p4x := IniRead(configFile, "QUICKSMS_POINT4", "X", "")
+        p4y := IniRead(configFile, "QUICKSMS_POINT4", "Y", "")
         
-        if (p1x = "" || p2x = "" || p3x = "") {
+        if (p1x = "" || p2x = "" || p3x = "" || p4x = "") {
             ShowQuietNotification("❌ Quick SMS ikke fullstendig konfigurert")
             return
         }
@@ -2405,7 +2408,13 @@ ExecuteAutofacetQuickSMS() {
         Sleep(15)
         Click("Left")
         
-        ; STEG 7: Vis SMS-meny (etter kort pause)
+        ; STEG 7: Klikk på punkt 4 (etter 200ms)
+        Sleep(200)
+        MouseMove(Integer(p4x), Integer(p4y), 0)
+        Sleep(15)
+        Click("Left")
+        
+        ; STEG 8: Vis SMS-meny (etter kort pause)
         Sleep(200)
         ShowQuickSMSMenu()
         
