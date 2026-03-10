@@ -397,7 +397,7 @@ ExecuteSmsSequence(phoneNumbers, points, usedFile) {
             A_Clipboard := phoneNumber
             Sleep(100)
             Send("^v")
-            Sleep(1000)
+            Sleep(700)
             
             ; Klikk punkt 3 (aksepter nummer)
             MouseMove(points[3].x, points[3].y, 0)
