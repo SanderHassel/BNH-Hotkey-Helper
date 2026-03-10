@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.3.3 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.3.4 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-04-03
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.3.3"  ; Oppdatert fra "6.3.2"
+global SCRIPT_VERSION := "6.3.4"  ; Oppdatert fra "6.3.3"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -152,6 +152,308 @@ CheckForUpdates() {
         }
     } catch as e {
         TrayTip("❌ Oppdateringsfeil:`n`n" e.Message, "BNH Auto-Update", 0x3)
+    }
+}
+
+; ============================================================================
+; TELIA SMS FUNKSJON - ALT+T
+; ============================================================================
+
+!t:: {
+    try {
+        TrackUsage("Telia SMS")
+        ExecuteTeliaSmsFunksjon()
+    } catch as e {
+        ShowError("Telia SMS", e)
+    }
+}
+
+ExecuteTeliaSmsFunksjon() {
+    try {
+        ; Sjekk om vi er i riktig nettleser
+        if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
+            ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
+            return
+        }
+        
+        ; STEG 1: Les clipboard og trekk ut telefonnumre
+        rawText := A_Clipboard
+        if (rawText = "") {
+            MsgBox("❌ Ingen data i clipboard!`n`nKopier kundelisten først (Ctrl+C).", "Telia SMS", "Icon!")
+            return
+        }
+        
+        ; STEG 2: Ekstraher og rens telefonnumre
+        phoneNumbers := ExtractPhoneNumbers(rawText)
+        
+        if (phoneNumbers.Length = 0) {
+            MsgBox("❌ Fant ingen telefonnumre i clipboard!", "Telia SMS", "Icon!")
+            return
+        }
+        
+        ; STEG 3: Sjekk om punktene er konfigurert
+        configFile := A_ScriptDir "\telia_sms_config.ini"
+        
+        if !FileExist(configFile) {
+            result := MsgBox("Dette er første gang du kjører Telia SMS-funksjonen.`n`nDu må først konfigurere 5 klikk-punkter.`n`nVil du fortsette?", "Telia SMS - Setup", "YesNo Icon?")
+            if (result = "No")
+                return
+            
+            ConfigureTeliaPoints()
+            return
+        }
+        
+        ; STEG 4: Les lagrede punkter
+        points := []
+        Loop 5 {
+            px := IniRead(configFile, "TELIA_POINT" A_Index, "X", "")
+            py := IniRead(configFile, "TELIA_POINT" A_Index, "Y", "")
+            
+            if (px = "" || py = "") {
+                result := MsgBox("⚠️ Punkt " A_Index " er ikke konfigurert!`n`nVil du konfigurere punktene på nytt?", "Telia SMS", "YesNo Icon!")
+                if (result = "Yes")
+                    ConfigureTeliaPoints()
+                return
+            }
+            
+            points.Push({x: Integer(px), y: Integer(py)})
+        }
+        
+        ; STEG 5: Fjern allerede brukte numre
+        usedFile := A_ScriptDir "\telia_used_numbers.txt"
+        unusedNumbers := FilterUnusedNumbers(phoneNumbers, usedFile)
+        
+        if (unusedNumbers.Length = 0) {
+            result := MsgBox("ℹ️ Alle telefonnumrene er allerede brukt!`n`nVil du nullstille listen?", "Telia SMS", "YesNo Icon?")
+            if (result = "Yes") {
+                FileDelete(usedFile)
+                unusedNumbers := phoneNumbers
+            } else {
+                return
+            }
+        }
+        
+        ; STEG 6: Vis bekreftelsesdialog
+        confirmText := "📱 Telia SMS - Bekreft utsendelse`n`n"
+        confirmText .= "Antall numre funnet: " phoneNumbers.Length "`n"
+        confirmText .= "Antall allerede brukt: " (phoneNumbers.Length - unusedNumbers.Length) "`n"
+        confirmText .= "Antall som vil bli sendt til: " unusedNumbers.Length "`n`n"
+        confirmText .= "Vil du fortsette?"
+        
+        result := MsgBox(confirmText, "Telia SMS", "YesNo Icon?")
+        if (result = "No")
+            return
+        
+        ; STEG 7: Utfør SMS-prosessen
+        ExecuteSmsSequence(unusedNumbers, points, usedFile)
+        
+    } catch as e {
+        ShowError("Telia SMS", e)
+    }
+}
+
+; ============================================================================
+; FUNKSJONER - TELEFONNUMMER EKSTRAKSJON
+; ============================================================================
+
+ExtractPhoneNumbers(text) {
+    phoneNumbers := []
+    
+    ; Regex for å finne norske telefonnumre (8 siffer med valgfrie mellomrom)
+    pattern := "\b(\d{2}\s?\d{2}\s?\d{2}\s?\d{2})\b"
+    
+    pos := 1
+    while (pos := RegExMatch(text, pattern, &match, pos)) {
+        rawNumber := match[1]
+        
+        ; Fjern alle mellomrom og spesialtegn
+        cleanNumber := RegExReplace(rawNumber, "[^\d]", "")
+        
+        ; Ta kun de siste 8 sifrene
+        if (StrLen(cleanNumber) >= 8) {
+            finalNumber := SubStr(cleanNumber, -8)  ; ✅ RIKTIG - Siste 8 siffer
+            
+            ; Legg til hvis ikke duplikat
+            isDuplicate := false
+            for existingNumber in phoneNumbers {
+                if (existingNumber = finalNumber) {
+                    isDuplicate := true
+                    break
+                }
+            }
+            
+            if (!isDuplicate)
+                phoneNumbers.Push(finalNumber)
+        }
+        
+        pos += match.Len
+    }
+    
+    return phoneNumbers
+}
+
+FilterUnusedNumbers(phoneNumbers, usedFile) {
+    unusedNumbers := []
+    usedNumbers := Map()
+    
+    ; Les tidligere brukte numre
+    if FileExist(usedFile) {
+        usedContent := FileRead(usedFile)
+        usedLines := StrSplit(usedContent, "`n", "`r")
+        
+        for line in usedLines {
+            cleanLine := Trim(StrReplace(line, "!", ""))
+            if (cleanLine != "")
+                usedNumbers[cleanLine] := true
+        }
+    }
+    
+    ; Filtrer ut brukte numre
+    for phoneNumber in phoneNumbers {
+        if (!usedNumbers.Has(phoneNumber))
+            unusedNumbers.Push(phoneNumber)
+    }
+    
+    return unusedNumbers
+}
+
+; ============================================================================
+; FUNKSJONER - PUNKTKONFIGURASJON (TELIA SMS)
+; ============================================================================
+
+SetupTeliaSMSPoints() {
+    try {
+        setupText := "📱 Konfigurer Telia SMS (6 punkter):`n`n"
+        setupText .= "PUNKT 1: Telefonnummer-felt (første klikk)`n"
+        setupText .= "PUNKT 2: Bekreft/Next-knapp`n"
+        setupText .= "PUNKT 3: Klikk etter hvert nummer`n"
+        setupText .= "PUNKT 4: Klikk mellom numre`n"
+        setupText .= "PUNKT 5: Meldingsfelt`n"
+        setupText .= "PUNKT 6: Send-knapp`n`n"
+        setupText .= "Trykk OK for å starte"
+        
+        result := MsgBox(setupText, "Setup: Telia SMS", "OKCancel Icon!")
+        if (result = "Cancel")
+            return
+        
+        configFile := A_ScriptDir "\telia_sms_config.ini"
+        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4", "PUNKT 5", "PUNKT 6"]
+        sections := ["TELIA_POINT1", "TELIA_POINT2", "TELIA_POINT3", "TELIA_POINT4", "TELIA_POINT5", "TELIA_POINT6"]
+        
+        Loop 6 {
+            idx := A_Index
+            MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
+            
+            Loop 5 {
+                remaining := 6 - A_Index
+                ToolTip("Lagrer " points[idx] " om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
+                Sleep(1000)
+            }
+            ToolTip()
+            
+            MouseGetPos(&mx, &my)
+            IniWrite(mx, configFile, sections[idx], "X")
+            IniWrite(my, configFile, sections[idx], "Y")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+        }
+        
+        MsgBox("🎉 Telia SMS fullstendig konfigurert!`n`nTrykk Alt+T for å bruke.", "Ferdig", "Iconi T4")
+        
+    } catch as e {
+        ShowError("Setup Telia SMS", e)
+    }
+}
+
+; ============================================================================
+; FUNKSJONER - SMS-SEKVENS (CORRECTED - USES CONFIGURED POINTS)
+; ============================================================================
+
+ExecuteSmsSequence(phoneNumbers, points, usedFile) {
+    try {
+        ; Telia SMS-melding
+        smsMessage := "Hei!`nTelia opplever for tiden problemer, noe som påvirker telefonlinjene våre.`nKontakt oss gjerne på kundesenter@bnh.no eller bestill time via vår nettside: bnh.no.`nVi beklager ulempene dette medfører!`nHilsen Birger N. Haug"
+        
+        totalNumbers := phoneNumbers.Length
+        currentNumber := 0
+        
+        ; STEG 1: Klikk punkt 1 (SMS-fane)
+        MouseMove(points[1].x, points[1].y, 0)
+        Sleep(100)
+        Click("Left")
+        Sleep(500)
+        
+        ; STEG 2: Iterer gjennom alle numre
+        for phoneNumber in phoneNumbers {
+            currentNumber++
+            
+            ; Klikk punkt 2 (nummerfelt)
+            MouseMove(points[2].x, points[2].y, 0)
+            Sleep(100)
+            Click("Left")
+            Sleep(300)
+            
+            ; Paste nummer
+            A_Clipboard := phoneNumber
+            Sleep(100)
+            Send("^v")
+            Sleep(1000)
+            
+            ; Klikk punkt 3 (aksepter nummer)
+            MouseMove(points[3].x, points[3].y, 0)
+            Sleep(50)
+            Click("Left")
+            Sleep(300)
+            
+            ; Marker nummer som brukt
+            FileAppend(phoneNumber "!`n", usedFile)
+        }
+        
+        ; STEG 3: Klikk punkt 4 (meldingsfelt)
+        Sleep(500)
+        MouseMove(points[4].x, points[4].y, 0)
+        Sleep(100)
+        Click("Left")
+        Sleep(500)
+        
+        ; Paste melding
+        A_Clipboard := smsMessage
+        Sleep(100)
+        Send("^v")
+        Sleep(500)
+        
+        ; STEG 4: Klikk punkt 5 (send)
+        MouseMove(points[5].x, points[5].y, 0)
+        Sleep(100)
+        Click("Left")
+        
+        MsgBox("✅ SMS sendt til " totalNumbers " kunder!", "Telia SMS - Fullført", "Iconi T5")
+        
+    } catch as e {
+        ShowError("SMS Sequence", e)
+    }
+}
+
+; ============================================================================
+; LEGG TIL I TRAY MENU
+; ============================================================================
+
+A_TrayMenu.Add()
+A_TrayMenu.Add("📱 &Telia SMS (Alt+T)", (*) => Send("!t"))
+A_TrayMenu.Add("⚙️ Konfigurer &Telia SMS-punkter", (*) => SetupTeliaSMSPoints())
+A_TrayMenu.Add("🗑️ Nullstill brukte numre", (*) => ResetUsedNumbers())
+
+ResetUsedNumbers() {
+    result := MsgBox("Er du sikker på at du vil nullstille listen over brukte telefonnumre?`n`nDette kan ikke angres!", "Nullstill Telia SMS", "YesNo Icon?")
+    if (result = "Yes") {
+        usedFile := A_ScriptDir "\telia_used_numbers.txt"
+        try {
+            if FileExist(usedFile)
+                FileDelete(usedFile)
+            MsgBox("✅ Listen over brukte numre er nullstilt!", "Telia SMS", "Iconi T3")
+        } catch as e {
+            MsgBox("❌ Kunne ikke nullstille: " e.Message, "Telia SMS", "Icon! T5")
+        }
     }
 }
 
@@ -522,7 +824,8 @@ ShowAutofacetSetupHub() {
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
         {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (4 punkter)", x: 30, y: 730},
         {name: "QUICKTILBUD", shortcut: "Shift + Dobbel-T", icon: "💼", color: "0xE67E22", desc: "Quick Tilbud-sekvens (7 punkter)", x: 350, y: 730},
-        {name: "QUICKTILBUDY", shortcut: "Shift + Dobbel-Y (Loop)", icon: "🔁", color: "0x9C27B0", desc: "Quick Tilbud med loop (8 punkter)", x: 30, y: 880}
+        {name: "QUICKTILBUDY", shortcut: "Shift + Dobbel-Y (Loop)", icon: "🔁", color: "0x9C27B0", desc: "Quick Tilbud med loop (8 punkter)", x: 30, y: 880},
+        {name: "TELIASMS", shortcut: "Alt+T", icon: "📱", color: "0x00897B", desc: "Telia SMS automation (5 punkter)", x: 350, y: 880}
     ]
     
     for module in modules {
@@ -628,6 +931,12 @@ StartModuleSetup(moduleName, shortcut) {
             return
         }
 
+        ; SPESIELL INSTRUKSJON FOR TELIASMS (5 punkter)
+        if (moduleName = "TELIASMS") {
+            ConfigureTeliaPoints()
+            return
+        }
+
         
 SetupQuickTilbudYPoints() {
     try {
@@ -730,6 +1039,49 @@ SetupQuickTilbudYPoints() {
         
     } catch as e {
         ShowError("StartModuleSetup", e)
+    }
+}
+
+ConfigureTeliaPoints() {
+    try {
+        setupText := "📱 Konfigurer Telia SMS (5 punkter):`n`n"
+        setupText .= "PUNKT 1: Velg SMS-fane`n"
+        setupText .= "PUNKT 2: Velg nummerfelt`n"
+        setupText .= "PUNKT 3: Aksepter nummer`n"
+        setupText .= "PUNKT 4: Velg meldingsfelt`n"
+        setupText .= "PUNKT 5: Klikk send`n`n"
+        setupText .= "Trykk OK for å starte"
+        
+        result := MsgBox(setupText, "Setup: Telia SMS", "OKCancel Icon!")
+        if (result = "Cancel")
+            return
+        
+        configFile := A_ScriptDir "\telia_sms_config.ini"
+        points := ["PUNKT 1 (SMS-fane)", "PUNKT 2 (Nummerfelt)", "PUNKT 3 (Aksepter)", "PUNKT 4 (Meldingsfelt)", "PUNKT 5 (Send)"]
+        sections := ["TELIA_POINT1", "TELIA_POINT2", "TELIA_POINT3", "TELIA_POINT4", "TELIA_POINT5"]
+        
+        Loop 5 {
+            idx := A_Index
+            MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
+            
+            Loop 5 {
+                remaining := 6 - A_Index
+                ToolTip("Lagrer " points[idx] " om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
+                Sleep(1000)
+            }
+            ToolTip()
+            
+            MouseGetPos(&mx, &my)
+            IniWrite(mx, configFile, sections[idx], "X")
+            IniWrite(my, configFile, sections[idx], "Y")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+        }
+        
+        MsgBox("🎉 Telia SMS fullstendig konfigurert!`n`nTrykk Alt+T for å bruke.", "Ferdig", "Iconi T4")
+        
+    } catch as e {
+        ShowError("Setup Telia SMS", e)
     }
 }
 
@@ -2224,20 +2576,14 @@ Gdip_DisposeImage(pBitmap) {
 
 ExecuteAutofacetQuickTilbud() {
     try {
-        TrackUsage("Autofacet Quick Tilbud")
+        TrackUsage("Execute Quick Tilbud")
         
         if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
             ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
             return
         }
         
-        ; Les konfigurerte koordinater
         configFile := A_ScriptDir "\autofacet_config.ini"
-        
-        if !FileExist(configFile) {
-            ShowQuietNotification("❌ Konfigurer Quick Tilbud først. Trykk Ctrl+Shift+P")
-            return
-        }
         
         ; Les alle 7 punkter
         points := []
@@ -2246,43 +2592,29 @@ ExecuteAutofacetQuickTilbud() {
             py := IniRead(configFile, "QUICKTILBUD_POINT" A_Index, "Y", "")
             
             if (px = "" || py = "") {
-                ShowQuietNotification("❌ Quick Tilbud ikke fullstendig konfigurert (mangler punkt " A_Index ")")
+                ShowQuietNotification("❌ Quick Tilbud ikke konfigurert. Trykk Ctrl+Shift+P for setup.")
                 return
             }
             
             points.Push({x: Integer(px), y: Integer(py)})
         }
         
-        ; ⏱️ KONFIGURERBARE SLEEP-TIDER (i millisekunder) - JUSTER ETTER BEHOV
-        sleepTimes := [
-            500,  ; Sleep FØR punkt 1 (etter initial klikk)
-            300,   ; Sleep FØR punkt 2
-            300,   ; Sleep FØR punkt 3
-            1600,   ; Sleep FØR punkt 4
-            300,   ; Sleep FØR punkt 5
-            300,   ; Sleep FØR punkt 6
-            300    ; Sleep FØR punkt 7
-        ]
+        ; Utfør sekvensen
+        MouseGetPos(&origX, &origY)
         
-        ; STEG 1: Klikk på nåværende musposisjon (som Quick SMS)
-        Click("Left")
-        
-        ; STEG 2-8: Klikk på de 7 konfigurerte punktene
         Loop 7 {
             idx := A_Index
-            
-            ; Pause før neste klikk (bruk konfigurerbar tid)
-            Sleep(sleepTimes[idx])
-            
             MouseMove(points[idx].x, points[idx].y, 0)
-            Sleep(15)
+            Sleep(50)
             Click("Left")
+            Sleep(300)
         }
         
-        ShowQuietNotification("✅ Quick Tilbud fullført!")
+        ; Tilbake til original posisjon
+        MouseMove(origX, origY)
         
     } catch as e {
-        ShowError("Autofacet Quick Tilbud", e)
+        ShowError("Execute Quick Tilbud", e)
     }
 }
 
@@ -2292,22 +2624,24 @@ ExecuteAutofacetQuickTilbud() {
 
 ShowQuickTilbudYLoopDialog() {
     try {
+        TrackUsage("Quick Tilbud Y Loop Dialog")
+        
+        ; Vis dialog for å velge antall loops
         loopGui := Gui("+AlwaysOnTop", "🔁 Quick Tilbud Y - Loop")
         loopGui.BackColor := COLORS.BG_DARK
         loopGui.MarginX := 20
         loopGui.MarginY := 20
         
-        titleText := loopGui.Add("Text", "w300 h35 Center c" COLORS.TEXT_WHITE, "🔁 Hvor mange ganger?")
-        titleText.SetFont("s14 Bold", "Segoe UI")
+        titleText := loopGui.Add("Text", "w300 h30 Center c" COLORS.TEXT_WHITE, "🔁 Hvor mange ganger?")
+        titleText.SetFont("s12 Bold", "Segoe UI")
         
-        infoText := loopGui.Add("Text", "w300 h40 c" COLORS.TEXT_GRAY, "Skriv inn antall ganger Quick Tilbud skal gjentas:")
-        infoText.SetFont("s10", "Segoe UI")
+        infoText := loopGui.Add("Text", "w300 h40 c" COLORS.TEXT_GRAY, "Hvor mange ganger skal Quick Tilbud gjentas?")
+        infoText.SetFont("s9", "Segoe UI")
         
         loopInput := loopGui.Add("Edit", "w300 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM, "1")
         loopInput.SetFont("s11", "Segoe UI")
-        loopInput.Focus()
         
-        startBtn := CreateStyledButton(loopGui, "w300 h45 y+15", "▶️ Start (Enter)", COLORS.GREEN, 11)
+        startBtn := CreateStyledButton(loopGui, "w300 h40 y+15", "▶️ Start", COLORS.GREEN, 11)
         startBtn.OnEvent("Click", (*) => StartLoop())
         
         cancelBtn := CreateStyledButton(loopGui, "w300 h35 y+10", "Avbryt", COLORS.RED, 9)
@@ -2315,32 +2649,83 @@ ShowQuickTilbudYLoopDialog() {
         
         loopGui.OnEvent("Close", (*) => loopGui.Destroy())
         loopGui.OnEvent("Escape", (*) => loopGui.Destroy())
-        loopGui.Show("w340 h260")
-        
-        HotIfWinActive("ahk_id " loopGui.Hwnd)
-        Hotkey("Enter", (*) => StartLoop(), "On")
+        loopGui.Show("w340 h240")
+        loopInput.Focus()
         
         StartLoop() {
-            try {
-                loopCount := Integer(loopInput.Value)
-                if loopCount < 1 || loopCount > 100 {
-                    MsgBox("Vennligst skriv inn et tall mellom 1 og 100!", "Ugyldig input", "Icon!")
-                    return
-                }
-                
-                HotIfWinActive("ahk_id " loopGui.Hwnd)
-                Hotkey("Enter", "Off")
-                HotIfWinActive()
-                
-                loopGui.Destroy()
-                ExecuteAutofacetQuickTilbudY(loopCount)
-            } catch as e {
-                ShowError("Start Loop", e)
+            loopCount := loopInput.Value
+            
+            if !IsNumber(loopCount) || loopCount < 1 {
+                MsgBox("❌ Ugyldig antall! Skriv inn et tall større enn 0.", "Feil", "Icon!")
+                return
             }
+            
+            loopGui.Destroy()
+            ExecuteQuickTilbudYLoop(Integer(loopCount))
         }
         
     } catch as e {
-        ShowError("Quick Tilbud Y Loop Dialog", e)
+        ShowError("Quick Tilbud Y Dialog", e)
+    }
+}
+
+ExecuteQuickTilbudYLoop(loopCount) {
+    try {
+        TrackUsage("Execute Quick Tilbud Y Loop")
+        
+        if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
+            ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
+            return
+        }
+        
+        configFile := A_ScriptDir "\autofacet_config.ini"
+        
+        ; Les alle 8 punkter med sleep-tider
+        points := []
+        Loop 8 {
+            px := IniRead(configFile, "QUICKTILBUDY_POINT" A_Index, "X", "")
+            py := IniRead(configFile, "QUICKTILBUDY_POINT" A_Index, "Y", "")
+            sleepTime := IniRead(configFile, "QUICKTILBUDY_POINT" A_Index, "Sleep", "500")
+            
+            if (px = "" || py = "") {
+                ShowQuietNotification("❌ Quick Tilbud Y ikke konfigurert. Trykk Ctrl+Shift+P for setup.")
+                return
+            }
+            
+            points.Push({x: Integer(px), y: Integer(py), sleep: Integer(sleepTime)})
+        }
+        
+        MouseGetPos(&origX, &origY)
+        
+        ; Loop gjennom antall ganger
+        Loop loopCount {
+            currentLoop := A_Index
+            
+            ; Punkter 1-7
+            Loop 7 {
+                idx := A_Index
+                MouseMove(points[idx].x, points[idx].y, 0)
+                Sleep(50)
+                Click("Left")
+                Sleep(points[idx].sleep)
+            }
+            
+            ; Punkt 8 (kun hvis ikke siste loop)
+            if (currentLoop < loopCount) {
+                MouseMove(points[8].x, points[8].y, 0)
+                Sleep(50)
+                Click("Left")
+                Sleep(points[8].sleep)
+            }
+        }
+        
+        ; Tilbake til original posisjon
+        MouseMove(origX, origY)
+        
+        ShowQuietNotification("✅ Quick Tilbud Y fullført! (" loopCount " loops)")
+        
+    } catch as e {
+        ShowError("Execute Quick Tilbud Y Loop", e)
     }
 }
 
@@ -2350,76 +2735,61 @@ ShowQuickTilbudYLoopDialog() {
 
 ExecuteAutofacetQuickSMS() {
     try {
-        TrackUsage("Autofacet Quick SMS")
+        TrackUsage("Execute Quick SMS")
         
         if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
             ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
             return
         }
         
-        ; Les konfigurerte koordinater
         configFile := A_ScriptDir "\autofacet_config.ini"
         
-        if !FileExist(configFile) {
-            ShowQuietNotification("❌ Konfigurer Quick SMS først. Trykk Ctrl+Shift+P")
-            return
+        ; Les alle 4 punkter
+        points := []
+        Loop 4 {
+            px := IniRead(configFile, "QUICKSMS_POINT" A_Index, "X", "")
+            py := IniRead(configFile, "QUICKSMS_POINT" A_Index, "Y", "")
+            
+            if (px = "" || py = "") {
+                ShowQuietNotification("❌ Quick SMS ikke konfigurert. Trykk Ctrl+Shift+P for setup.")
+                return
+            }
+            
+            points.Push({x: Integer(px), y: Integer(py)})
         }
         
-        p1x := IniRead(configFile, "QUICKSMS_POINT1", "X", "")
-        p1y := IniRead(configFile, "QUICKSMS_POINT1", "Y", "")
-        p2x := IniRead(configFile, "QUICKSMS_POINT2", "X", "")
-        p2y := IniRead(configFile, "QUICKSMS_POINT2", "Y", "")
-        p3x := IniRead(configFile, "QUICKSMS_POINT3", "X", "")
-        p3y := IniRead(configFile, "QUICKSMS_POINT3", "Y", "")
-        p4x := IniRead(configFile, "QUICKSMS_POINT4", "X", "")
-        p4y := IniRead(configFile, "QUICKSMS_POINT4", "Y", "")
+        ; Utfør sekvensen
+        MouseGetPos(&origX, &origY)
         
-        if (p1x = "" || p2x = "" || p3x = "" || p4x = "") {
-            ShowQuietNotification("❌ Quick SMS ikke fullstendig konfigurert")
-            return
-        }
-        
-        ; STEG 1: Klikk på musposisjon
+        ; Punkt 1
+        MouseMove(points[1].x, points[1].y, 0)
+        Sleep(50)
         Click("Left")
-        
-        ; STEG 2: Klikk på punkt 1 (etter 1500ms)
-        Sleep(1500)
-        MouseMove(Integer(p1x), Integer(p1y), 0)
-        Sleep(15)
-        Click("Left")
-        
-        ; STEG 3: Klikk på punkt 2 (etter 500ms)
         Sleep(500)
-        MouseMove(Integer(p2x), Integer(p2y), 0)
-        Sleep(15)
+        
+        ; Punkt 2
+        MouseMove(points[2].x, points[2].y, 0)
+        Sleep(50)
         Click("Left")
+        Sleep(300)
         
-        ; STEG 4: Pil ned (etter 100ms)
-        Sleep(100)
-        Send("{Down}")
-        
-        ; STEG 5: Enter (etter 100ms)
-        Sleep(100)
-        Send("{Enter}")
-        
-        ; STEG 6: Klikk på punkt 3 (etter 100ms)
-        Sleep(100)
-        MouseMove(Integer(p3x), Integer(p3y), 0)
-        Sleep(15)
+        ; Punkt 3
+        MouseMove(points[3].x, points[3].y, 0)
+        Sleep(50)
         Click("Left")
+        Sleep(300)
         
-        ; STEG 7: Klikk på punkt 4 (etter 200ms)
-        Sleep(200)
-        MouseMove(Integer(p4x), Integer(p4y), 0)
-        Sleep(15)
+        ; Punkt 4
+        MouseMove(points[4].x, points[4].y, 0)
+        Sleep(50)
         Click("Left")
+        Sleep(100)
         
-        ; STEG 8: Vis SMS-meny (etter kort pause)
-        Sleep(200)
-        ShowQuickSMSMenu()
+        ; Tilbake til original posisjon
+        MouseMove(origX, origY)
         
     } catch as e {
-        ShowError("Autofacet Quick SMS", e)
+        ShowError("Execute Quick SMS", e)
     }
 }
 
@@ -2588,7 +2958,9 @@ A_TrayMenu.Add("📝 ARBEIDSORDRE (Ctrl+Shift+|)", (*) => Send("^+|"))
 A_TrayMenu.Add()
 A_TrayMenu.Add("&Reload (Ctrl+Shift+R)", (*) => Reload())
 A_TrayMenu.Add("&Avslutt", (*) => ExitApp())
+A_TrayMenu.Add("📱 Telia SMS (Alt+T)", (*) => Send("!t"))
 A_TrayMenu.Default := "&Hjelp (Ctrl+Shift+H)"
+
 
 ; Startup melding
 TrayTip("✅ BNH v" SCRIPT_VERSION " Blackbox Edition startet! Auto-update aktivert.", APP_TITLE, 0x1)
