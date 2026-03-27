@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.4.2 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-04-07
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.4.2"
+global SCRIPT_VERSION := "6.4.3"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1800,6 +1800,14 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *hvis")
         SendText("*Hvis garanti")
+    }
+}
+
+:*:*ved::
+{
+    try {
+        TrackUsage("Hotstring: *ved")
+        SendText("*Ved garanti")
     }
 }
 
