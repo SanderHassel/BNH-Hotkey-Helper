@@ -5,11 +5,11 @@
 ; ============================================================================
 ; BNH HOTKEY HELPER v6.4.3 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2026-04-07
+; Sist oppdatert: 2026-03-27
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.4.3"
+global SCRIPT_VERSION := "6.4.4"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -305,15 +305,15 @@ RunQuickSMSSequence(smsText) {
         ; Lagre original musposisjon
         MouseGetPos(&origX, &origY)
         
-        ; Utfør klikk-sekvensen
+        ; Utfør klikk-sekvensen med per-punkt sleep-tider fra config
         Loop pointCount {
             idx := A_Index
             MouseMove(points[idx].x, points[idx].y, 0)
             Sleep(100)
             Click("Left")
             
-            if (idx < pointCount)
-                Sleep(500)
+            sleepTime := IniRead(configFile, "QUICKSMS_POINT" idx, "Sleep", "500")
+            Sleep(Integer(sleepTime))
         }
         
         ; Vent litt, deretter paste SMS-teksten
@@ -341,13 +341,14 @@ RunQuickSMSSequence(smsText) {
 
 SetupQuickSMSPoints() {
     try {
-        setupText := "📱 Konfigurer Quick SMS (5 punkter):`n`n"
+        setupText := "📱 Konfigurer Quick SMS (5 punkter + sleep-tider):`n`n"
         setupText .= "Du må konfigurere 5 klikk-punkter:`n`n"
         setupText .= "PUNKT 1: Første klikk`n"
         setupText .= "PUNKT 2: Andre klikk`n"
         setupText .= "PUNKT 3: Tredje klikk`n"
         setupText .= "PUNKT 4: Fjerde klikk (før meny)`n"
         setupText .= "PUNKT 5: Femte klikk`n`n"
+        setupText .= "Du må også sette sleep-tid (i millisekunder) for hvert punkt.`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Quick SMS", "OKCancel Icon!")
@@ -373,7 +374,38 @@ SetupQuickSMSPoints() {
             IniWrite(mx, configFile, sections[idx], "X")
             IniWrite(my, configFile, sections[idx], "Y")
             
-            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+            ; Be om sleep-tid for dette punktet
+            sleepGui := Gui("+AlwaysOnTop", "Sleep-tid for " points[idx])
+            sleepGui.BackColor := COLORS.BG_DARK
+            sleepGui.MarginX := 20
+            sleepGui.MarginY := 20
+            
+            titleText := sleepGui.Add("Text", "w300 h30 Center c" COLORS.TEXT_WHITE, "⏱️ Sleep-tid (millisekunder)")
+            titleText.SetFont("s12 Bold", "Segoe UI")
+            
+            infoText := sleepGui.Add("Text", "w300 h40 c" COLORS.TEXT_GRAY, "Hvor lenge skal scriptet vente etter klikk på " points[idx] "?`n`n(1000ms = 1 sekund)")
+            infoText.SetFont("s9", "Segoe UI")
+            
+            sleepInput := sleepGui.Add("Edit", "w300 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM, "500")
+            sleepInput.SetFont("s11", "Segoe UI")
+            
+            okBtn := CreateStyledButton(sleepGui, "w300 h40 y+15", "✅ Lagre", COLORS.BLUE, 11)
+            okBtn.OnEvent("Click", (*) => sleepGui.Destroy())
+            
+            sleepGui.OnEvent("Close", (*) => sleepGui.Destroy())
+            sleepGui.OnEvent("Escape", (*) => sleepGui.Destroy())
+            sleepGui.Show("w340 h220")
+            sleepInput.Focus()
+            
+            WinWaitClose("ahk_id " sleepGui.Hwnd)
+            
+            sleepTime := sleepInput.Value
+            if !IsNumber(sleepTime) || sleepTime < 0
+                sleepTime := 500
+            
+            IniWrite(sleepTime, configFile, sections[idx], "Sleep")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my "`nSleep: " sleepTime "ms", "Suksess", "Iconi T2")
         }
         
         MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nDobbel-tap Ctrl for å bruke.", "Ferdig", "Iconi T4")
@@ -551,13 +583,14 @@ FilterUnusedNumbers(phoneNumbers, usedFile) {
 
 SetupTeliaSMSPoints() {
     try {
-        setupText := "📱 Konfigurer Telia SMS (6 punkter):`n`n"
+        setupText := "📱 Konfigurer Telia SMS (6 punkter + sleep-tider):`n`n"
         setupText .= "PUNKT 1: Telefonnummer-felt (første klikk)`n"
         setupText .= "PUNKT 2: Bekreft/Next-knapp`n"
         setupText .= "PUNKT 3: Klikk etter hvert nummer`n"
         setupText .= "PUNKT 4: Klikk mellom numre`n"
         setupText .= "PUNKT 5: Meldingsfelt`n"
         setupText .= "PUNKT 6: Send-knapp`n`n"
+        setupText .= "Du må også sette sleep-tid (i millisekunder) for hvert punkt.`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Telia SMS", "OKCancel Icon!")
@@ -583,7 +616,38 @@ SetupTeliaSMSPoints() {
             IniWrite(mx, configFile, sections[idx], "X")
             IniWrite(my, configFile, sections[idx], "Y")
             
-            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+            ; Be om sleep-tid for dette punktet
+            sleepGui := Gui("+AlwaysOnTop", "Sleep-tid for " points[idx])
+            sleepGui.BackColor := COLORS.BG_DARK
+            sleepGui.MarginX := 20
+            sleepGui.MarginY := 20
+            
+            titleText := sleepGui.Add("Text", "w300 h30 Center c" COLORS.TEXT_WHITE, "⏱️ Sleep-tid (millisekunder)")
+            titleText.SetFont("s12 Bold", "Segoe UI")
+            
+            infoText := sleepGui.Add("Text", "w300 h40 c" COLORS.TEXT_GRAY, "Hvor lenge skal scriptet vente etter klikk på " points[idx] "?`n`n(1000ms = 1 sekund)")
+            infoText.SetFont("s9", "Segoe UI")
+            
+            sleepInput := sleepGui.Add("Edit", "w300 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM, "500")
+            sleepInput.SetFont("s11", "Segoe UI")
+            
+            okBtn := CreateStyledButton(sleepGui, "w300 h40 y+15", "✅ Lagre", COLORS.BLUE, 11)
+            okBtn.OnEvent("Click", (*) => sleepGui.Destroy())
+            
+            sleepGui.OnEvent("Close", (*) => sleepGui.Destroy())
+            sleepGui.OnEvent("Escape", (*) => sleepGui.Destroy())
+            sleepGui.Show("w340 h220")
+            sleepInput.Focus()
+            
+            WinWaitClose("ahk_id " sleepGui.Hwnd)
+            
+            sleepTime := sleepInput.Value
+            if !IsNumber(sleepTime) || sleepTime < 0
+                sleepTime := 500
+            
+            IniWrite(sleepTime, configFile, sections[idx], "Sleep")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my "`nSleep: " sleepTime "ms", "Suksess", "Iconi T2")
         }
         
         MsgBox("🎉 Telia SMS fullstendig konfigurert!`n`nTrykk Alt+T for å bruke.", "Ferdig", "Iconi T4")
@@ -605,11 +669,20 @@ ExecuteSmsSequence(phoneNumbers, points, usedFile) {
         totalNumbers := phoneNumbers.Length
         currentNumber := 0
         
+        configFile := A_ScriptDir "\telia_sms_config.ini"
+        
+        ; Les sleep-tider fra config (med fallback til standardverdier)
+        sleepTimes := []
+        Loop 5 {
+            st := IniRead(configFile, "TELIA_POINT" A_Index, "Sleep", "500")
+            sleepTimes.Push(Integer(st))
+        }
+        
         ; STEG 1: Klikk punkt 1 (SMS-fane)
         MouseMove(points[1].x, points[1].y, 0)
         Sleep(100)
         Click("Left")
-        Sleep(500)
+        Sleep(sleepTimes[1])
         
         ; STEG 2: Iterer gjennom alle numre
         for phoneNumber in phoneNumbers {
@@ -619,7 +692,7 @@ ExecuteSmsSequence(phoneNumbers, points, usedFile) {
             MouseMove(points[2].x, points[2].y, 0)
             Sleep(100)
             Click("Left")
-            Sleep(300)
+            Sleep(sleepTimes[2])
             
             ; Paste nummer
             A_Clipboard := phoneNumber
@@ -631,7 +704,7 @@ ExecuteSmsSequence(phoneNumbers, points, usedFile) {
             MouseMove(points[3].x, points[3].y, 0)
             Sleep(50)
             Click("Left")
-            Sleep(300)
+            Sleep(sleepTimes[3])
             
             ; Marker nummer som brukt
             FileAppend(phoneNumber "!`n", usedFile)
@@ -642,7 +715,7 @@ ExecuteSmsSequence(phoneNumbers, points, usedFile) {
         MouseMove(points[4].x, points[4].y, 0)
         Sleep(100)
         Click("Left")
-        Sleep(500)
+        Sleep(sleepTimes[4])
         
         ; Paste melding
         A_Clipboard := smsMessage
@@ -654,6 +727,7 @@ ExecuteSmsSequence(phoneNumbers, points, usedFile) {
         MouseMove(points[5].x, points[5].y, 0)
         Sleep(100)
         Click("Left")
+        Sleep(sleepTimes[5])
         
         MsgBox("✅ SMS sendt til " totalNumbers " kunder!", "Telia SMS - Fullført", "Iconi T5")
         
@@ -1271,12 +1345,13 @@ SetupQuickTilbudYPoints() {
 
 ConfigureTeliaPoints() {
     try {
-        setupText := "📱 Konfigurer Telia SMS (5 punkter):`n`n"
+        setupText := "📱 Konfigurer Telia SMS (5 punkter + sleep-tider):`n`n"
         setupText .= "PUNKT 1: Velg SMS-fane`n"
         setupText .= "PUNKT 2: Velg nummerfelt`n"
         setupText .= "PUNKT 3: Aksepter nummer`n"
         setupText .= "PUNKT 4: Velg meldingsfelt`n"
         setupText .= "PUNKT 5: Klikk send`n`n"
+        setupText .= "Du må også sette sleep-tid (i millisekunder) for hvert punkt.`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Telia SMS", "OKCancel Icon!")
@@ -1302,7 +1377,38 @@ ConfigureTeliaPoints() {
             IniWrite(mx, configFile, sections[idx], "X")
             IniWrite(my, configFile, sections[idx], "Y")
             
-            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+            ; Be om sleep-tid for dette punktet
+            sleepGui := Gui("+AlwaysOnTop", "Sleep-tid for " points[idx])
+            sleepGui.BackColor := COLORS.BG_DARK
+            sleepGui.MarginX := 20
+            sleepGui.MarginY := 20
+            
+            titleText := sleepGui.Add("Text", "w300 h30 Center c" COLORS.TEXT_WHITE, "⏱️ Sleep-tid (millisekunder)")
+            titleText.SetFont("s12 Bold", "Segoe UI")
+            
+            infoText := sleepGui.Add("Text", "w300 h40 c" COLORS.TEXT_GRAY, "Hvor lenge skal scriptet vente etter klikk på " points[idx] "?`n`n(1000ms = 1 sekund)")
+            infoText.SetFont("s9", "Segoe UI")
+            
+            sleepInput := sleepGui.Add("Edit", "w300 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM, "500")
+            sleepInput.SetFont("s11", "Segoe UI")
+            
+            okBtn := CreateStyledButton(sleepGui, "w300 h40 y+15", "✅ Lagre", COLORS.BLUE, 11)
+            okBtn.OnEvent("Click", (*) => sleepGui.Destroy())
+            
+            sleepGui.OnEvent("Close", (*) => sleepGui.Destroy())
+            sleepGui.OnEvent("Escape", (*) => sleepGui.Destroy())
+            sleepGui.Show("w340 h220")
+            sleepInput.Focus()
+            
+            WinWaitClose("ahk_id " sleepGui.Hwnd)
+            
+            sleepTime := sleepInput.Value
+            if !IsNumber(sleepTime) || sleepTime < 0
+                sleepTime := 500
+            
+            IniWrite(sleepTime, configFile, sections[idx], "Sleep")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my "`nSleep: " sleepTime "ms", "Suksess", "Iconi T2")
         }
         
         MsgBox("🎉 Telia SMS fullstendig konfigurert!`n`nTrykk Alt+T for å bruke.", "Ferdig", "Iconi T4")
@@ -1314,10 +1420,11 @@ ConfigureTeliaPoints() {
 
 SetupQuickTilbudPoints() {
     try {
-        setupText := "💼 Konfigurer Quick Tilbud (7 punkter):`n`n"
+        setupText := "💼 Konfigurer Quick Tilbud (7 punkter + sleep-tider):`n`n"
         setupText .= "Du må konfigurere 7 klikk-punkter for tilbudsprosessen.`n`n"
         setupText .= "PUNKT 1: Første klikk (etter musposisjon)`n"
         setupText .= "PUNKT 2-7: Videre klikk i sekvensen`n`n"
+        setupText .= "Du må også sette sleep-tid (i millisekunder) for hvert punkt.`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Quick Tilbud", "OKCancel Icon!")
@@ -1344,7 +1451,38 @@ SetupQuickTilbudPoints() {
             IniWrite(mx, configFile, sections[idx], "X")
             IniWrite(my, configFile, sections[idx], "Y")
             
-            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
+            ; Be om sleep-tid for dette punktet
+            sleepGui := Gui("+AlwaysOnTop", "Sleep-tid for " points[idx])
+            sleepGui.BackColor := COLORS.BG_DARK
+            sleepGui.MarginX := 20
+            sleepGui.MarginY := 20
+            
+            titleText := sleepGui.Add("Text", "w300 h30 Center c" COLORS.TEXT_WHITE, "⏱️ Sleep-tid (millisekunder)")
+            titleText.SetFont("s12 Bold", "Segoe UI")
+            
+            infoText := sleepGui.Add("Text", "w300 h40 c" COLORS.TEXT_GRAY, "Hvor lenge skal scriptet vente etter klikk på " points[idx] "?`n`n(1000ms = 1 sekund)")
+            infoText.SetFont("s9", "Segoe UI")
+            
+            sleepInput := sleepGui.Add("Edit", "w300 h35 c" COLORS.TEXT_WHITE " Background" COLORS.BG_MEDIUM, "500")
+            sleepInput.SetFont("s11", "Segoe UI")
+            
+            okBtn := CreateStyledButton(sleepGui, "w300 h40 y+15", "✅ Lagre", COLORS.BLUE, 11)
+            okBtn.OnEvent("Click", (*) => sleepGui.Destroy())
+            
+            sleepGui.OnEvent("Close", (*) => sleepGui.Destroy())
+            sleepGui.OnEvent("Escape", (*) => sleepGui.Destroy())
+            sleepGui.Show("w340 h220")
+            sleepInput.Focus()
+            
+            WinWaitClose("ahk_id " sleepGui.Hwnd)
+            
+            sleepTime := sleepInput.Value
+            if !IsNumber(sleepTime) || sleepTime < 0
+                sleepTime := 500
+            
+            IniWrite(sleepTime, configFile, sections[idx], "Sleep")
+            
+            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my "`nSleep: " sleepTime "ms", "Suksess", "Iconi T2")
         }
         
         MsgBox("🎉 Quick Tilbud fullstendig konfigurert!`n`nHold Shift og dobbel-klikk T for å bruke.", "Ferdig", "Iconi T4")
@@ -2789,7 +2927,9 @@ ExecuteAutofacetQuickTilbud() {
             MouseMove(points[idx].x, points[idx].y, 0)
             Sleep(50)
             Click("Left")
-            Sleep(300)
+            
+            sleepTime := IniRead(configFile, "QUICKTILBUD_POINT" idx, "Sleep", "500")
+            Sleep(Integer(sleepTime))
         }
         
         ; Tilbake til original posisjon
