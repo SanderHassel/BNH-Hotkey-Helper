@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.4.1 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.2 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2026-03-27
+; Sist oppdatert: 2026-04-07
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.4.1"
+global SCRIPT_VERSION := "6.4.2"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -287,7 +287,7 @@ RunQuickSMSSequence(smsText) {
         points := []
         pointCount := 0
         
-        Loop 4 {
+        Loop 5 {
             px := IniRead(configFile, "QUICKSMS_POINT" A_Index, "X", "")
             py := IniRead(configFile, "QUICKSMS_POINT" A_Index, "Y", "")
             
@@ -341,12 +341,13 @@ RunQuickSMSSequence(smsText) {
 
 SetupQuickSMSPoints() {
     try {
-        setupText := "📱 Konfigurer Quick SMS (4 punkter):`n`n"
-        setupText .= "Du må konfigurere 4 klikk-punkter:`n`n"
+        setupText := "📱 Konfigurer Quick SMS (5 punkter):`n`n"
+        setupText .= "Du må konfigurere 5 klikk-punkter:`n`n"
         setupText .= "PUNKT 1: Første klikk`n"
         setupText .= "PUNKT 2: Andre klikk`n"
         setupText .= "PUNKT 3: Tredje klikk`n"
-        setupText .= "PUNKT 4: Fjerde klikk (før meny)`n`n"
+        setupText .= "PUNKT 4: Fjerde klikk (før meny)`n"
+        setupText .= "PUNKT 5: Femte klikk`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Quick SMS", "OKCancel Icon!")
@@ -354,10 +355,10 @@ SetupQuickSMSPoints() {
             return
         
         configFile := A_ScriptDir "\autofacet_config.ini"
-        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4"]
-        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4"]
+        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4", "PUNKT 5"]
+        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4", "QUICKSMS_POINT5"]
         
-        Loop 4 {
+        Loop 5 {
             idx := A_Index
             MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
             
@@ -1049,7 +1050,7 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-tap Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (4 punkter)", x: 30, y: 730},
+        {name: "QUICKSMS", shortcut: "Dobbel-tap Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (5 punkter)", x: 30, y: 730},
         {name: "QUICKTILBUD", shortcut: "Shift + Dobbel-T", icon: "💼", color: "0xE67E22", desc: "Quick Tilbud-sekvens (7 punkter)", x: 350, y: 730},
         {name: "QUICKTILBUDY", shortcut: "Shift + Dobbel-Y (Loop)", icon: "🔁", color: "0x9C27B0", desc: "Quick Tilbud med loop (8 punkter)", x: 30, y: 880},
         {name: "TELIASMS", shortcut: "Alt+T", icon: "📱", color: "0x00897B", desc: "Telia SMS automation (5 punkter)", x: 350, y: 880}
