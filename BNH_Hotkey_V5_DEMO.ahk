@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.3.5 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.0 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2026-04-07
+; Sist oppdatert: 2026-04-08
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.3.5"  ; Oppdatert fra "6.3.4"
+global SCRIPT_VERSION := "6.4.0"  ; Oppdatert fra "6.3.5"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -51,6 +51,9 @@ global QUICKSMS_COORDS := {
     Point2: {X: 0, Y: 0},  ; Andre klikk
     Point3: {X: 0, Y: 0}   ; Tredje klikk
 }
+
+; --- INKLUDER MODULER ---
+#Include BNH_QuickSMS.ahk
 
 ; ============================================================================
 ; AUTO-UPDATE SYSTEM - v6.0 (MED SEMANTISK VERSJONERING)
@@ -822,7 +825,7 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-klikk Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (4 punkter)", x: 30, y: 730},
+        {name: "QUICKSMS", shortcut: "Dobbel-tap Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (4 punkter)", x: 30, y: 730},
         {name: "QUICKTILBUD", shortcut: "Shift + Dobbel-T", icon: "💼", color: "0xE67E22", desc: "Quick Tilbud-sekvens (7 punkter)", x: 350, y: 730},
         {name: "QUICKTILBUDY", shortcut: "Shift + Dobbel-Y (Loop)", icon: "🔁", color: "0x9C27B0", desc: "Quick Tilbud med loop (8 punkter)", x: 30, y: 880},
         {name: "TELIASMS", shortcut: "Alt+T", icon: "📱", color: "0x00897B", desc: "Telia SMS automation (5 punkter)", x: 350, y: 880}
@@ -1081,49 +1084,6 @@ ConfigureTeliaPoints() {
         
     } catch as e {
         ShowError("Setup Telia SMS", e)
-    }
-}
-
-SetupQuickSMSPoints() {
-    try {
-        setupText := "📱 Konfigurer Quick SMS (4 punkter):`n`n"
-        setupText .= "Du må konfigurere 4 klikk-punkter:`n`n"
-        setupText .= "PUNKT 1: Første klikk`n"
-        setupText .= "PUNKT 2: Andre klikk`n"
-        setupText .= "PUNKT 3: Tredje klikk`n"
-        setupText .= "PUNKT 4: Fjerde klikk (før meny)`n`n"
-        setupText .= "Trykk OK for å starte"
-        
-        result := MsgBox(setupText, "Setup: Quick SMS", "OKCancel Icon!")
-        if (result = "Cancel")
-            return
-        
-        configFile := A_ScriptDir "\autofacet_config.ini"
-        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4"]
-        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4"]
-        
-        Loop 4 {
-            idx := A_Index
-            MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
-            
-            Loop 5 {
-                remaining := 6 - A_Index
-                ToolTip("Lagrer " points[idx] " om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
-                Sleep(1000)
-            }
-            ToolTip()
-            
-            MouseGetPos(&mx, &my)
-            IniWrite(mx, configFile, sections[idx], "X")
-            IniWrite(my, configFile, sections[idx], "Y")
-            
-            MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my, "Suksess", "Iconi T2")
-        }
-        
-        MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nDobbel-klikk Ctrl for å bruke.", "Ferdig", "Iconi T4")
-        
-    } catch as e {
-        ShowError("Setup Quick SMS", e)
     }
 }
 
@@ -2418,7 +2378,8 @@ GetHotkeysMap() {
             "Ctrl + Shift + 4", "📋 HISTORIKK i Autofacet",
             "Ctrl + Shift + 5", "🔄 OPPDATERINGER i Autofacet",
             "Ctrl + Shift + |", "📝 ARBEIDSORDRE i Autofacet",
-            "Alt + T", "📱 Telia SMS-utsendelse (bulk SMS via nettleseren)"  ;
+            "Alt + T", "📱 Telia SMS-utsendelse (bulk SMS via nettleseren)",
+            "Dobbel-tap Ctrl", "📱 Quick SMS - viser popup-meny for å velge og sende SMS-mal"  ;
         )
     }
     return hotkeyMap
@@ -2718,70 +2679,6 @@ ExecuteQuickTilbudYLoop(loopCount) {
 }
 
 ; ============================================================================
-; AUTOFACET QUICK SMS - DOUBLE-TAP E
-; ============================================================================
-
-ExecuteAutofacetQuickSMS() {
-    try {
-        TrackUsage("Execute Quick SMS")
-        
-        if !WinActive("ahk_exe chrome.exe") && !WinActive("ahk_exe msedge.exe") && !WinActive("ahk_exe brave.exe") {
-            ShowQuietNotification("⚠️ Denne funksjonen fungerer kun i Chrome/Edge/Brave")
-            return
-        }
-        
-        configFile := A_ScriptDir "\autofacet_config.ini"
-        
-        ; Les alle 4 punkter
-        points := []
-        Loop 4 {
-            px := IniRead(configFile, "QUICKSMS_POINT" A_Index, "X", "")
-            py := IniRead(configFile, "QUICKSMS_POINT" A_Index, "Y", "")
-            
-            if (px = "" || py = "") {
-                ShowQuietNotification("❌ Quick SMS ikke konfigurert. Trykk Ctrl+Shift+P for setup.")
-                return
-            }
-            
-            points.Push({x: Integer(px), y: Integer(py)})
-        }
-        
-        ; Utfør sekvensen
-        MouseGetPos(&origX, &origY)
-        
-        ; Punkt 1
-        MouseMove(points[1].x, points[1].y, 0)
-        Sleep(50)
-        Click("Left")
-        Sleep(500)
-        
-        ; Punkt 2
-        MouseMove(points[2].x, points[2].y, 0)
-        Sleep(50)
-        Click("Left")
-        Sleep(300)
-        
-        ; Punkt 3
-        MouseMove(points[3].x, points[3].y, 0)
-        Sleep(50)
-        Click("Left")
-        Sleep(300)
-        
-        ; Punkt 4
-        MouseMove(points[4].x, points[4].y, 0)
-        Sleep(50)
-        Click("Left")
-        Sleep(100)
-        
-        ; Tilbake til original posisjon
-        MouseMove(origX, origY)
-        
-    } catch as e {
-        ShowError("Execute Quick SMS", e)
-    }
-}
-
-; ============================================================================
 ; AUTOFACET QUICK TILBUD Y - UTFØRELSE MED LOOP
 ; ============================================================================
 
@@ -2850,78 +2747,6 @@ ExecuteAutofacetQuickTilbudY(loopCount) {
     } catch as e {
         ToolTip()
         ShowError("Autofacet Quick Tilbud Y", e)
-    }
-}
-
-ShowQuickSMSMenu() {
-    try {
-        smsGui := Gui("+AlwaysOnTop", "📱 Velg SMS-mal")
-        smsGui.BackColor := COLORS.BG_DARK
-        smsGui.MarginX := 20
-        smsGui.MarginY := 20
-        
-        titleText := smsGui.Add("Text", "w300 h35 Center c" COLORS.TEXT_WHITE, "📱 Velg SMS-mal")
-        titleText.SetFont("s14 Bold", "Segoe UI")
-        
-        btn1 := CreateStyledButton(smsGui, "w300 h50 y+15", "Service -Avtale", COLORS.BLUE, 11)
-        btn1.OnEvent("Click", (*) => SendSMSTemplate("opsms-", smsGui))
-        
-        btn2 := CreateStyledButton(smsGui, "w300 h50 y+10", "Service +Avtale", COLORS.GREEN, 11)
-        btn2.OnEvent("Click", (*) => SendSMSTemplate("opsms+", smsGui))
-        
-        btn3 := CreateStyledButton(smsGui, "w300 h50 y+10", "Service Garanti", COLORS.ORANGE, 11)
-        btn3.OnEvent("Click", (*) => SendSMSTemplate("opsmsg", smsGui))
-        
-        btn4 := CreateStyledButton(smsGui, "w300 h50 y+10", "EU-kontroll", COLORS.PURPLE, 11)
-        btn4.OnEvent("Click", (*) => SendSMSTemplate("opeu", smsGui))
-        
-        cancelBtn := CreateStyledButton(smsGui, "w300 h35 y+15", "Avbryt", COLORS.RED, 9)
-        cancelBtn.OnEvent("Click", (*) => smsGui.Destroy())
-        
-        smsGui.OnEvent("Close", (*) => smsGui.Destroy())
-        smsGui.OnEvent("Escape", (*) => smsGui.Destroy())
-        smsGui.Show("w340 h380")
-        
-    } catch as e {
-        ShowError("Quick SMS Menu", e)
-    }
-}
-
-SendSMSTemplate(templateType, gui) {
-    try {
-        gui.Destroy()
-        Sleep(100)
-        
-        ; Kall hotstring-funksjonen direkte
-        switch templateType {
-            case "opsms-":
-                TrackUsage("Hotstring: *opsms-")
-                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Bestill time raskt og enkelt på nett: https://service.bnh.no/ Hilsen Birger N. Haug / 40010400."
-                SendText(ProcessHotstringWithPlate(template))
-                
-            case "opsms+":
-                TrackUsage("Hotstring: *opsms+")
-                template := "Hei, vi har forsøkt å ringe deg. Det er på tide med service på {LICENSEPLATE}. Du har allerede en forhåndsbetalt serviceavtale. Bestill time hær: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
-                SendText(ProcessHotstringWithPlate(template))
-                
-            case "opsmsg":
-                TrackUsage("Hotstring: *opsmsg")
-                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for service på din bil med regnr: {LICENSEPLATE}. Jeg vil minne om at bilen din er 5 år {DD.MM.ÅÅ} og det er anbefalt å utføre service før dette. Ring oss gjerne tilbake på 40010400 slik at vi kan sette opp en time sammen med deg. "
-                SendText(ProcessHotstringWithPlate(template))
-                
-            case "opeu":
-                TrackUsage("Hotstring: *opeu")
-                template := "Hei, vi har forsøkt å ringe deg. Basert på våre opplysninger er det tid for Eu-kontroll på din bil med regnr: {LICENSEPLATE}. Bestill time hær: https://service.bnh.no/ eller ring oss på 40010400. Hilsen Birger N. Haug."
-                SendText(ProcessHotstringWithPlate(template))
-                
-            default:
-                return
-        }
-        
-        TrackUsage("Quick SMS: " templateType)
-        
-    } catch as e {
-        ShowError("Send SMS Template", e)
     }
 }
 
