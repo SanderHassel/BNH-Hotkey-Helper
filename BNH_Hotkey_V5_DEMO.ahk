@@ -1557,31 +1557,11 @@ ProcessHotstringWithPlate(templateText) {
         TrackUsage("Hotstring: *brems")
         
         ; Send normal tekst
+        SendText("Vi anbefaler å utføre bremseservice i tillegg, da dette ikke inngår i servicen.`r`n")
         Send("^b")  ;
-        SendText("Pris inkl. bremseservice: ")
+        SendText("Det koster 2 290,- og kommer i tillegg.`r`n")
         Send("^b")  ;
-        SendText("?,- inkl. mva. `r`n")
-        Send("^b")  ;
-        SendText("Pris uten bremseservice: ")
-        Send("^b")  ;
-        SendText("?,- inkl. mva.`r`n`r`n")
-        SendText("Vi har lagt til bremseservice i forbindelse med timen din. Gi oss beskjed dersom du ikke ønsker dette. `r`n`r`n")
-        
-        ; Send FET TEKST
-        Send("^b")  ;
-        SendText("Hva innebærer bremseservice?")
-        Send("^b")  ;
-        SendText("`r`n")
-        
-        SendText("Vi demonterer bremseklosser foran og bak, rengjør og pusser anleggsflater, og smører alle nødvendige komponenter for å sikre optimal funksjon. `r`n`r`n")
-        
-        ; Send FET TEKST igjen
-        Send("^b")
-        SendText("Hvorfor anbefaler vi bremseservice?")
-        Send("^b")
-        SendText("`r`n")
-        
-        SendText("På elbiler brukes bremsene mindre fordi mye av nedbremsingen skjer via regenerering. Dette kan føre til at bremsekomponenter setter seg fast, bremseskiver ruster og bremsevirkningen svekkes.  Derfor anbefaler vi å utføre bremseservice årlig for trygg og effektiv bremsing.")
+        SendText("Bremseservice innebærer at bremseklossene foran og bak tas ut og settes inn igjen. De renses, rubbes og anleggsflater smøres. Dette anbefales fordi bremsene brukes annerledes på en elbil, ettersom bremsing ofte skjer ved regenerering. Bremsene aktiveres derfor i mindre grad, noe som kan føre til at komponentene lettere setter seg fast. Dette kan igjen skape rust på bremseskivene og gi dårligere bremsevirkning.")        
     }
 }
 
@@ -1628,6 +1608,14 @@ ProcessHotstringWithPlate(templateText) {
         Send("^b")  ;
         SendText("SVAR: ")
         Send("^b")  ;
+    }
+}
+
+:*:*hvis::
+{
+    try {
+        TrackUsage("Hotstring: *hvis")
+        SendText("*Hvis garanti")
     }
 }
 
