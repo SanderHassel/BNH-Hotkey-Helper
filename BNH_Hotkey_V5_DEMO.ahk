@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.3.4 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.3.5 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
-; Sist oppdatert: 2026-04-03
+; Sist oppdatert: 2026-04-07
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.3.4"  ; Oppdatert fra "6.3.3"
+global SCRIPT_VERSION := "6.3.5"  ; Oppdatert fra "6.3.4"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -709,7 +709,7 @@ ResetUsedNumbers() {
 
 ^+X:: {
     try {
-        TrackUsage("Vetner på bilen")
+        TrackUsage("Venter på bilen")
         SendText("Venter på bilen")
     } catch as e {
         ShowError("Venter på bilen", e)
@@ -833,15 +833,15 @@ ShowAutofacetSetupHub() {
     }
     
     ; Footer med status
-    statusText := setupGui.Add("Text", "x30 y880 w640 h25 Center c" COLORS.TEXT_GRAY, "✅ Konfigurer NULLPUNKT først, deretter de andre modulene")
+    statusText := setupGui.Add("Text", "x30 y1030 w640 h25 Center c" COLORS.TEXT_GRAY, "✅ Konfigurer NULLPUNKT først, deretter de andre modulene")
     statusText.SetFont("s9 Italic", "Segoe UI")
 
-    closeBtn := CreateStyledButton(setupGui, "x240 y920 w220 h45", "✅ Lukk", COLORS.BLUE, 12)
+    closeBtn := CreateStyledButton(setupGui, "x240 y1060 w220 h45", "✅ Lukk", COLORS.BLUE, 12)
     closeBtn.OnEvent("Click", (*) => setupGui.Destroy())
     
     setupGui.OnEvent("Close", (*) => setupGui.Destroy())
     setupGui.OnEvent("Escape", (*) => setupGui.Destroy())
-    setupGui.Show("w700 h990")
+    setupGui.Show("w700 h1130")
 }
 
 ; Lag visuelt kort for hver modul
@@ -936,8 +936,37 @@ StartModuleSetup(moduleName, shortcut) {
             ConfigureTeliaPoints()
             return
         }
-
+        ; STANDARD OPPSETT (1 punkt)
+        setupText := "🎯 Konfigurer " moduleName "-knapp:`n`n"
+        setupText .= "1. Trykk OK for å fortsette`n"
+        setupText .= "2. Du har 5 sekunder til å holde musen over knappen`n"
+        setupText .= "3. Musposisjonen lagres automatisk`n`n"
+        setupText .= "⚠️ VIKTIG: Hold musen HELT STILLE over knappen!"
         
+        result := MsgBox(setupText, "Setup: " moduleName, "OKCancel Icon!")
+        if (result = "Cancel")
+            return
+        
+        Loop 5 {
+            remaining := 6 - A_Index
+            ToolTip("Lagrer posisjon om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
+            Sleep(1000)
+        }
+        ToolTip()
+        
+        MouseGetPos(&mx, &my)
+        configFile := A_ScriptDir "\autofacet_config.ini"
+        IniWrite(mx, configFile, moduleName, "X")
+        IniWrite(my, configFile, moduleName, "Y")
+        
+        MsgBox("✅ Posisjon lagret!`n`nX: " mx "`nY: " my "`n`nHurtigtast: " shortcut, "Suksess", "Iconi T3")
+        
+    } catch as e {
+        ShowError("StartModuleSetup", e)
+    }
+}
+
+
 SetupQuickTilbudYPoints() {
     try {
         setupText := "🔁 Konfigurer Quick Tilbud Y (8 punkter + sleep-tider):`n`n"
@@ -1009,36 +1038,6 @@ SetupQuickTilbudYPoints() {
         
     } catch as e {
         ShowError("Setup Quick Tilbud Y", e)
-    }
-}
-
-        ; STANDARD OPPSETT (1 punkt)
-        setupText := "🎯 Konfigurer " moduleName "-knapp:`n`n"
-        setupText .= "1. Trykk OK for å fortsette`n"
-        setupText .= "2. Du har 5 sekunder til å holde musen over knappen`n"
-        setupText .= "3. Musposisjonen lagres automatisk`n`n"
-        setupText .= "⚠️ VIKTIG: Hold musen HELT STILLE over knappen!"
-        
-        result := MsgBox(setupText, "Setup: " moduleName, "OKCancel Icon!")
-        if (result = "Cancel")
-            return
-        
-        Loop 5 {
-            remaining := 6 - A_Index
-            ToolTip("Lagrer posisjon om " remaining " sekunder...`n`nHold musen stille!", A_ScreenWidth/2, A_ScreenHeight/2)
-            Sleep(1000)
-        }
-        ToolTip()
-        
-        MouseGetPos(&mx, &my)
-        configFile := A_ScriptDir "\autofacet_config.ini"
-        IniWrite(mx, configFile, moduleName, "X")
-        IniWrite(my, configFile, moduleName, "Y")
-        
-        MsgBox("✅ Posisjon lagret!`n`nX: " mx "`nY: " my "`n`nHurtigtast: " shortcut, "Suksess", "Iconi T3")
-        
-    } catch as e {
-        ShowError("StartModuleSetup", e)
     }
 }
 
@@ -2431,7 +2430,8 @@ GetHotkeysMap() {
             "Ctrl + Shift + 3", "💬 KOMMUNIKASJON i Autofacet",
             "Ctrl + Shift + 4", "📋 HISTORIKK i Autofacet",
             "Ctrl + Shift + 5", "🔄 OPPDATERINGER i Autofacet",
-            "Ctrl + Shift + |", "📝 ARBEIDSORDRE i Autofacet"  ;
+            "Ctrl + Shift + |", "📝 ARBEIDSORDRE i Autofacet",
+            "Alt + T", "📱 Telia SMS-utsendelse (bulk SMS via nettleseren)"  ;
         )
     }
     return hotkeyMap
@@ -2450,7 +2450,8 @@ GetHotstringsMap() {
             "*samtykke", "Vi har ikke registrert ditt samtykke til elektronisk kommunikasjon...",
             "*forkontroll", "Vi ønsker å utføre en forkontroll av lyden først. På denne måten kan vi utelukke...",
             "*leiebil", "Du vil få tilsendt en SMS i forbindelse med din leiebilbestilling...",
-            "*ikkevent", "OBS: Vi kan dessverre ikke tilby ventetime på denne type jobb..."
+            "*ikkevent", "OBS: Vi kan dessverre ikke tilby ventetime på denne type jobb...",
+            "*hvis", "*Hvis garanti"
         )
     }
     return hotstringMap
