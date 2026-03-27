@@ -1560,7 +1560,6 @@ ProcessHotstringWithPlate(templateText) {
         SendText("Vi anbefaler å utføre bremseservice i tillegg, da dette ikke inngår i servicen.`r`n")
         Send("^b")  ;
         SendText("Det koster 2 290,- og kommer i tillegg.`r`n")
-        Send("^b")  ;
         SendText("Bremseservice innebærer at bremseklossene foran og bak tas ut og settes inn igjen. De renses, rubbes og anleggsflater smøres. Dette anbefales fordi bremsene brukes annerledes på en elbil, ettersom bremsing ofte skjer ved regenerering. Bremsene aktiveres derfor i mindre grad, noe som kan føre til at komponentene lettere setter seg fast. Dette kan igjen skape rust på bremseskivene og gi dårligere bremsevirkning.")        
     }
 }
