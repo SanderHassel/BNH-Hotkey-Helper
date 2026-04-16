@@ -3,7 +3,7 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.4.3 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.4 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-03-27
 ; ============================================================================
@@ -316,7 +316,7 @@ RunQuickSMSSequence(smsText, startX, startY) {
         ; Utfør klikk-sekvensen med per-punkt sleep-tider fra config
         ; Punkt 1: Klikk der musen var da dobbel-Ctrl ble trigget
         MouseMove(startX, startY, 0)
-        Sleep(50)
+        Sleep(1000)
         Click("Left")
         Sleep(500)
         
@@ -324,7 +324,7 @@ RunQuickSMSSequence(smsText, startX, startY) {
         Loop points.Length {
             idx := A_Index
             MouseMove(points[idx].x, points[idx].y, 0)
-            Sleep(100)
+            Sleep(300)
             Click("Left")
             
             sleepTime := IniRead(configFile, "QUICKSMS_POINT" idx, "Sleep", "500")
