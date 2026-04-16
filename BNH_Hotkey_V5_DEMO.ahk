@@ -350,7 +350,8 @@ RunQuickSMSSequence(smsText) {
 SetupQuickSMSPoints() {
     try {
         setupText := "📱 Konfigurer Quick SMS (3 punkter + musposisjon):`n`n"
-        setupText .= "PUNKT 1 brukes automatisk = nåværende musposisjon ved dobbel-Ctrl.`n`n"
+        setupText .= "PUNKT 1 brukes automatisk = nåværende musposisjon ved dobbel-Ctrl.`n"
+        setupText .= "Plasser musen der du vil klikke først før du dobbelt-klikker Ctrl.`n`n"
         setupText .= "Du må konfigurere 3 klikk-punkter:`n`n"
         setupText .= "PUNKT 2: Andre klikk`n"
         setupText .= "PUNKT 3: Tredje klikk`n"
