@@ -314,7 +314,6 @@ RunQuickSMSSequence(smsText, startX, startY) {
         MouseGetPos(&origX, &origY)
         
         ; Utfør klikk-sekvensen med per-punkt sleep-tider fra config
-        Loop pointCount {
         ; Punkt 1: Klikk der musen var da dobbel-Ctrl ble trigget
         MouseMove(startX, startY, 0)
         Sleep(50)
