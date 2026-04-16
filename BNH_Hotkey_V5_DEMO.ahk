@@ -172,7 +172,7 @@ CheckForUpdates() {
 ; QUICK SMS MODUL (innebygd)
 ; ============================================================================
 
-ExecuteAutofacetQuickSMS() {
+ExecuteAutofacetQuickSMS(startX := "", startY := "") {
     try {
         TrackUsage("Autofacet Quick SMS")
         
@@ -208,15 +208,19 @@ ExecuteAutofacetQuickSMS() {
             return
         }
         
+        ; Fallback for kall som ikke sender med startposisjon
+        if (startX = "" || startY = "")
+            MouseGetPos(&startX, &startY)
+        
         ; Vis popup-meny for å velge SMS-mal
-        ShowQuickSMSMenu()
+        ShowQuickSMSMenu(startX, startY)
         
     } catch as e {
         ShowError("Quick SMS", e)
     }
 }
 
-ShowQuickSMSMenu() {
+ShowQuickSMSMenu(startX, startY) {
     try {
         smsGui := Gui("+AlwaysOnTop", "📱 Quick SMS - Velg mal")
         smsGui.BackColor := COLORS.BG_DARK
@@ -269,7 +273,7 @@ ShowQuickSMSMenu() {
         SelectSMSTemplate(templateText) {
             smsGui.Destroy()
             Sleep(300)
-            RunQuickSMSSequence(templateText)
+            RunQuickSMSSequence(templateText, startX, startY)
         }
         
         SendCustomSMS() {
@@ -280,7 +284,7 @@ ShowQuickSMSMenu() {
             }
             smsGui.Destroy()
             Sleep(300)
-            RunQuickSMSSequence(customText)
+            RunQuickSMSSequence(customText, startX, startY)
         }
         
     } catch as e {
@@ -288,7 +292,7 @@ ShowQuickSMSMenu() {
     }
 }
 
-RunQuickSMSSequence(smsText) {
+RunQuickSMSSequence(smsText, startX, startY) {
     try {
         configFile := A_ScriptDir "\autofacet_config.ini"
         
@@ -310,8 +314,9 @@ RunQuickSMSSequence(smsText) {
         MouseGetPos(&origX, &origY)
         
         ; Utfør klikk-sekvensen med per-punkt sleep-tider fra config
-        Loop pointCount {
-        ; Punkt 1: Klikk direkte der musen allerede er (ingen flytting)
+        ; Punkt 1: Klikk der musen var da dobbel-Ctrl ble trigget
+        MouseMove(startX, startY, 0)
+        Sleep(50)
         Click("Left")
         Sleep(500)
         
@@ -875,7 +880,8 @@ ResetUsedNumbers() {
         lastCtrlTime := 0
         
         ; Start Quick SMS direkte
-        ExecuteAutofacetQuickSMS()
+        MouseGetPos(&savedX, &savedY)
+        ExecuteAutofacetQuickSMS(savedX, savedY)
         return
     }
     
