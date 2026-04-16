@@ -190,11 +190,20 @@ ExecuteAutofacetQuickSMS() {
             return
         }
         
-        ; Les punkt 1 for å verifisere at QUICKSMS er satt opp
-        p1x := IniRead(configFile, "QUICKSMS_POINT1", "X", "")
-        p1y := IniRead(configFile, "QUICKSMS_POINT1", "Y", "")
+        ; Verifiser at punkt 2-4 er satt opp (punkt 1 = nåværende musposisjon)
+        sections := ["QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4"]
+        isConfigured := true
         
-        if (p1x = "" || p1y = "") {
+        for section in sections {
+            px := IniRead(configFile, section, "X", "")
+            py := IniRead(configFile, section, "Y", "")
+            if (px = "" || py = "") {
+                isConfigured := false
+                break
+            }
+        }
+        
+        if !isConfigured {
             MsgBox("❌ Quick SMS-punkter er ikke konfigurert!`n`nTrykk Ctrl+Shift+P og klikk på QUICKSMS-kortet for å konfigurere.", "Quick SMS", "Icon!")
             return
         }
@@ -283,23 +292,18 @@ RunQuickSMSSequence(smsText) {
     try {
         configFile := A_ScriptDir "\autofacet_config.ini"
         
-        ; Les alle konfigurerte punkter
+        ; Les konfigurerte punkter 2-4 (punkt 1 = nåværende musposisjon)
         points := []
-        pointCount := 0
         
-        Loop 5 {
-            px := IniRead(configFile, "QUICKSMS_POINT" A_Index, "X", "")
-            py := IniRead(configFile, "QUICKSMS_POINT" A_Index, "Y", "")
-            
-            if (px != "" && py != "") {
-                points.Push({x: Integer(px), y: Integer(py)})
-                pointCount++
+        Loop 3 {
+            pointNumber := A_Index + 1
+            px := IniRead(configFile, "QUICKSMS_POINT" pointNumber, "X", "")
+            py := IniRead(configFile, "QUICKSMS_POINT" pointNumber, "Y", "")
+            if (px = "" || py = "") {
+                MsgBox("❌ Quick SMS-punkter 2-4 er ikke konfigurert!`n`nGå til Setup Hub (Ctrl+Shift+P) og konfigurer QUICKSMS.", "Quick SMS", "Icon!")
+                return
             }
-        }
-        
-        if (pointCount = 0) {
-            MsgBox("❌ Ingen Quick SMS-punkter konfigurert!`n`nGå til Setup Hub (Ctrl+Shift+P) og konfigurer QUICKSMS.", "Quick SMS", "Icon!")
-            return
+            points.Push({x: Integer(px), y: Integer(py)})
         }
         
         ; Lagre original musposisjon
@@ -307,6 +311,12 @@ RunQuickSMSSequence(smsText) {
         
         ; Utfør klikk-sekvensen med per-punkt sleep-tider fra config
         Loop pointCount {
+        ; Punkt 1: Klikk direkte der musen allerede er (ingen flytting)
+        Click("Left")
+        Sleep(500)
+        
+        ; Punkt 2-4: Utfør konfigurerte klikk-punkter
+        Loop points.Length {
             idx := A_Index
             MouseMove(points[idx].x, points[idx].y, 0)
             Sleep(100)
@@ -314,6 +324,8 @@ RunQuickSMSSequence(smsText) {
             
             sleepTime := IniRead(configFile, "QUICKSMS_POINT" idx, "Sleep", "500")
             Sleep(Integer(sleepTime))
+            if (idx < points.Length)
+                Sleep(500)
         }
         
         ; Vent litt, deretter paste SMS-teksten
@@ -349,6 +361,12 @@ SetupQuickSMSPoints() {
         setupText .= "PUNKT 4: Fjerde klikk (før meny)`n"
         setupText .= "PUNKT 5: Femte klikk`n`n"
         setupText .= "Du må også sette sleep-tid (i millisekunder) for hvert punkt.`n`n"
+        setupText := "📱 Konfigurer Quick SMS (3 punkter + musposisjon):`n`n"
+        setupText .= "PUNKT 1 brukes automatisk = nåværende musposisjon ved dobbel-Ctrl.`n`n"
+        setupText .= "Du må konfigurere 3 klikk-punkter:`n`n"
+        setupText .= "PUNKT 2: Andre klikk`n"
+        setupText .= "PUNKT 3: Tredje klikk`n"
+        setupText .= "PUNKT 4: Fjerde klikk (før meny)`n`n"
         setupText .= "Trykk OK for å starte"
         
         result := MsgBox(setupText, "Setup: Quick SMS", "OKCancel Icon!")
@@ -356,10 +374,10 @@ SetupQuickSMSPoints() {
             return
         
         configFile := A_ScriptDir "\autofacet_config.ini"
-        points := ["PUNKT 1", "PUNKT 2", "PUNKT 3", "PUNKT 4", "PUNKT 5"]
-        sections := ["QUICKSMS_POINT1", "QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4", "QUICKSMS_POINT5"]
+        points := ["PUNKT 2", "PUNKT 3", "PUNKT 4"]
+        sections := ["QUICKSMS_POINT2", "QUICKSMS_POINT3", "QUICKSMS_POINT4"]
         
-        Loop 5 {
+        Loop 3 {
             idx := A_Index
             MsgBox("Klar for " points[idx] "`n`nDu har 5 sekunder til å plassere musen.", points[idx], "Iconi T3")
             
@@ -408,7 +426,7 @@ SetupQuickSMSPoints() {
             MsgBox("✅ " points[idx] " lagret!`n`nX: " mx "`nY: " my "`nSleep: " sleepTime "ms", "Suksess", "Iconi T2")
         }
         
-        MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nDobbel-tap Ctrl for å bruke.", "Ferdig", "Iconi T4")
+        MsgBox("🎉 Quick SMS fullstendig konfigurert!`n`nPUNKT 1 brukes automatisk fra musposisjon ved dobbel-tap Ctrl.", "Ferdig", "Iconi T4")
         
     } catch as e {
         ShowError("Setup Quick SMS", e)
@@ -1124,7 +1142,7 @@ ShowAutofacetSetupHub() {
         {name: "HISTORIKK", shortcut: "Ctrl+Shift+4", icon: "📋", color: COLORS.PURPLE, desc: "Vis kundehistorikk", x: 350, y: 430},
         {name: "OPPDATERINGER", shortcut: "Ctrl+Shift+5", icon: "🔄", color: COLORS.DARK_RED, desc: "Hent nye data", x: 30, y: 580},
         {name: "ARBEIDSORDRE", shortcut: "Ctrl+Shift+|", icon: "📝", color: COLORS.CYAN, desc: "Åpne arbeidsordre", x: 350, y: 580},
-        {name: "QUICKSMS", shortcut: "Dobbel-tap Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (5 punkter)", x: 30, y: 730},
+        {name: "QUICKSMS", shortcut: "Dobbel-tap Ctrl", icon: "📱", color: "0x1ABC9C", desc: "Quick SMS-sekvens (3 punkter + musposisjon)", x: 30, y: 730},
         {name: "QUICKTILBUD", shortcut: "Shift + Dobbel-T", icon: "💼", color: "0xE67E22", desc: "Quick Tilbud-sekvens (7 punkter)", x: 350, y: 730},
         {name: "QUICKTILBUDY", shortcut: "Shift + Dobbel-Y (Loop)", icon: "🔁", color: "0x9C27B0", desc: "Quick Tilbud med loop (8 punkter)", x: 30, y: 880},
         {name: "TELIASMS", shortcut: "Alt+T", icon: "📱", color: "0x00897B", desc: "Telia SMS automation (5 punkter)", x: 350, y: 880}
