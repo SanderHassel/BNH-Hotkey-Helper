@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.4.4 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.5 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-03-27
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.4.4"
+global SCRIPT_VERSION := "6.4.5"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -41,8 +41,8 @@ global COLORS := {
 
 ; Dekk prisliste paths (oppdater årlig)
 global DEKK_PATHS := {
-    Continental: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Continental høst 2025.xlsx",
-    Nokian: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Nokian høst 2025.xlsx"
+    Continental: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Continental vår 2026.xlsx",
+    Nokian: "O:\Verksted\Felles priser BRUK DENNE\Dekkprisliste Nokian vår 2026.xlsx"
 }
 
 ; Autofacet Quick SMS koordinater (konfigurerbar via setup)
