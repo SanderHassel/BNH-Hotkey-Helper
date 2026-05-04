@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.4.5 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.6 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-03-27
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.4.5"
+global SCRIPT_VERSION := "6.4.6"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1890,7 +1890,7 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *ikkeledig")
         SendText("OBS: Det er dessverre ikke ledig tid på verkstedet på den ønskede datoen for denne jobben.`r`n")
-        SendText("Vi har derfor foreløpig flyttet timen til neste ledige tidspunkt: [sett inn ny dato og klokkeslett, f.eks. 03.03.2026].`r`n`r`n")
+        SendText("Vi har derfor foreløpig flyttet timen til første ledige tidspunkt.`r`n`r`n")
         SendText("Du kan levere bilen kl. 08:00 og hente den igjen kl. 16:00. Det er også mulig å levere/hente utenfor åpningstid via nøkkelautomaten.`r`n`r`n")
         SendText("Dersom den nye tiden ikke passer, vennligst ta kontakt snarest – enten ved å svare på denne e-posten eller ringe oss på 40010400. Vi skal gjøre vårt beste for å finne et tidspunkt som passer deg bedre.`r`n`r`n")
         SendText("Vi tilbyr leiebil fra 698,- pr. døgn dersom du har behov for dette (må avtales minimum 48 timer før verkstedtid).`r`n`r`n")
