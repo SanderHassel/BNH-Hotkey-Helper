@@ -3,13 +3,13 @@
 #Warn
 
 ; ============================================================================
-; BNH HOTKEY HELPER v6.4.6 - BLACKBOX EDITION
+; BNH HOTKEY HELPER v6.4.7 - BLACKBOX EDITION
 ; Sander Hasselberg - Birger N. Haug AS
 ; Sist oppdatert: 2026-03-27
 ; ============================================================================
 
 ; --- KONFIGURASJON ---
-global SCRIPT_VERSION := "6.4.6"
+global SCRIPT_VERSION := "6.4.7"
 global APP_TITLE := "BNH Hotkey Helper"
 global STATS_FILE := A_ScriptDir "\BNH_stats.ini"
 
@@ -1882,6 +1882,14 @@ ProcessHotstringWithPlate(templateText) {
     try {
         TrackUsage("Hotstring: *takst")
         SendText("Her har du link til onlinebooking for takst av skade: https://automotive-damageinspection.cabgroup.net/bnh/#/booking/start Gå inn og booke time som passer deg. Hilsen Birger N. Haug / tlf 40010400")
+    }
+}
+
+:*:*maxv::
+{
+    try {
+        TrackUsage("Hotstring: *maxv")
+        SendText("Bekrefter verkstedtime for {LICENSEPLATE} den {APPOINTMENTDATE} ved avd. {DEALERNAME}. Grunnet redusert kapasitet denne dagen har vi dessverre ikke mulighet til å tilby ventetime. Vi må derfor endre leveringstidspunktet til 08:00 og henting innen 17:00. Dette tiltaket innfører vi for å sikre at alle jobbene denne dagen blir utført og ferdigstilt samme dag. Du kan fortsatt benytte døgnåpen nøkkelautomat. Se åpningstider: www.bnh.no/avdelinger Tillegg må avklares på forhånd. Beklager ulempen dette medfører. Hilsen Birger N. Haug / 40010400")
     }
 }
 
